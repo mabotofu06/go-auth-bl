@@ -1,5 +1,5 @@
 --DDL を定義
-\c tone-db
+\c go-auth-db
 
 --ユーザー認証管理テーブル
 CREATE TABLE mng_user_auth_tbl(

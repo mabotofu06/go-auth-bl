@@ -1,5 +1,5 @@
 --DDL を定義
-\c tone-db
+\c go-auth-db
 
 --Todo管理テーブル
 CREATE TABLE mng_todo_tbl(

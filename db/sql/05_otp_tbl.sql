@@ -1,5 +1,5 @@
 --DDL を定義
-\c tone-db
+\c go-auth-db
 
 --OTP認証管理テーブル
 CREATE TABLE mng_otp_tbl(

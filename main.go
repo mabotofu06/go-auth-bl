@@ -22,6 +22,8 @@ func main() {
 			"message": "Hello, World!",
 		}
 
+		ConnectDB()
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(res); err != nil {
@@ -71,7 +73,7 @@ func main() {
 		}
 
 		//DBにアクセス
-		connect_db()
+		ConnectDB()
 	})
 
 	fmt.Println("Starting server at port 8080")

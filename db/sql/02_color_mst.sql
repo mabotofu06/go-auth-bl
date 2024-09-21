@@ -1,5 +1,5 @@
 --DDL を定義
-\c tone-db
+\c go-auth-db
 
 CREATE TABLE color_mst(
   color_code  varchar(6)  NOT NULL primary key,

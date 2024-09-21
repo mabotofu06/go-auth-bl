@@ -4,14 +4,16 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+
+	_ "github.com/lib/pq"
 )
 
-func connect_db() {
-	// データベース接続情報
-	connStr := "user=username password=password dbname=mydb sslmode=disable"
-
+func ConnectDB() {
 	// データベースに接続
-	db, err := sql.Open("postgres", connStr)
+	db, err := sql.Open(
+		"postgres",
+		"host=127.0.0.1 port=5432 user=go-auth-db password=postgres dbname=go-auth-db sslmode=disable",
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -25,7 +27,7 @@ func connect_db() {
 
 	fmt.Println("Successfully connected to the database!")
 
-	id := 1
+	id := 3
 
 	// クエリの実行例
 	rows, err := db.Query(

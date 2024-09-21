@@ -13,7 +13,7 @@ CREATE TABLE mng_user_auth_tbl(
   updated_datetime timestamp,
   delete_date      date,
 
-  foreign key(user_id) references mng_user_info_tbl(user_id)
+--  foreign key(user_id) references mng_user_info_tbl(user_id)
 );
 
 INSERT INTO mng_user_auth_tbl VALUES

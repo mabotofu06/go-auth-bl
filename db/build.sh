@@ -1,12 +1,19 @@
 #!/bin/sh
 
-image=go-auth:postgre-db
+image=go-auth-db:postgre-db
+container=go-auth-db
 
-docker rm -f $image
+# 古いコンテナの削除
+docker rm -f $container
 
+# 古いイメージの削除
+docker rmi -f $image
+
+# Dockerイメージのビルド
 docker build -t $image .
 
-docker volume rm -f go-auth-db_db-store
+# 古いボリュームの削除
+docker volume rm -f db-store
 
-docker rm -f go-auth-db
-docker compose up -d
+# Docker Composeを使用してコンテナを起動
+docker-compose up -d

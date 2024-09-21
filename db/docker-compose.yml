@@ -8,23 +8,20 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - ./sql:/docker-entrypoint-initdb.d
+      #- ./sql:/docker-entrypoint-initdb.d
       - db-store:/var/lib/postgresql/data #DBのデータを永続化
     environment:
-    #Postgreの設定を定義
-      POSTGRES_DB:
-        'go-auth-db'
-      POSTGRES_USER:
-        'go-auth-db'
-      POSTGRES_PASSWORD:
-        'password'
+      # Postgreの設定を定義
+      POSTGRES_DB: 'go-auth-db'
+      POSTGRES_USER: 'go-auth-db'
+      POSTGRES_PASSWORD: 'postgres'
     networks:
-      - go-auth-db-network
+      - go-auth-network
 
 networks:
-  go-auth-db-network:
-    external: true
+  go-auth-network:
+    driver: bridge
 
-#DBのデータを永続化
+# DBのデータを永続化
 volumes:
   db-store:
