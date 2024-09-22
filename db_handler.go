@@ -21,6 +21,7 @@ func ConnectDB() (*[]User, error) {
 	)
 	if err != nil {
 		log.Fatal(err)
+		return nil, err
 	}
 	defer db.Close() // 関数終了時に接続を閉じる
 
@@ -28,6 +29,7 @@ func ConnectDB() (*[]User, error) {
 	err = db.Ping()
 	if err != nil {
 		log.Fatal(err)
+		return nil, err
 	}
 
 	fmt.Println("Successfully connected to the database!")
@@ -44,6 +46,7 @@ func ConnectDB() (*[]User, error) {
 
 	if err != nil {
 		log.Fatal(err)
+		return nil, err
 	}
 	defer rows.Close() // 関数終了時にクエリを閉じる
 
@@ -53,6 +56,7 @@ func ConnectDB() (*[]User, error) {
 		var name string
 		if err := rows.Scan(&user.id, &user.name); err != nil {
 			log.Fatal(err)
+			return nil, err
 		}
 		fmt.Printf("ID: %d, Name: %s\n", id, name)
 		userList = append(userList, user)
@@ -60,6 +64,7 @@ func ConnectDB() (*[]User, error) {
 
 	if err := rows.Err(); err != nil {
 		log.Fatal(err)
+		return nil, err
 	}
 
 	return &userList, nil
