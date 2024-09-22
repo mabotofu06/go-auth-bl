@@ -8,16 +8,21 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func ConnectDB() {
+type User struct {
+	id   int
+	name string
+}
+
+func ConnectDB() (*[]User, error) {
 	// データベースに接続
 	db, err := sql.Open(
 		"postgres",
-		"host=127.0.0.1 port=5432 user=go-auth-db password=postgres dbname=go-auth-db sslmode=disable",
+		"host=127.0.0.1 port=5000 user=go-auth-db password=postgres dbname=go-auth-db sslmode=disable",
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
+	defer db.Close() // 関数終了時に接続を閉じる
 
 	// 接続を確認
 	err = db.Ping()
@@ -26,6 +31,8 @@ func ConnectDB() {
 	}
 
 	fmt.Println("Successfully connected to the database!")
+
+	userList := []User{} // ユーザ情報を格納するスライス
 
 	id := 3
 
@@ -38,18 +45,22 @@ func ConnectDB() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer rows.Close()
+	defer rows.Close() // 関数終了時にクエリを閉じる
 
 	for rows.Next() {
+		var user User
 		var id int
 		var name string
-		if err := rows.Scan(&id, &name); err != nil {
+		if err := rows.Scan(&user.id, &user.name); err != nil {
 			log.Fatal(err)
 		}
 		fmt.Printf("ID: %d, Name: %s\n", id, name)
+		userList = append(userList, user)
 	}
 
 	if err := rows.Err(); err != nil {
 		log.Fatal(err)
 	}
+
+	return &userList, nil
 }

@@ -13,7 +13,7 @@ docker rmi -f $image
 docker build -t $image .
 
 # 古いボリュームの削除
-docker volume rm -f db-store
+docker volume rm -f db_db-store
 
 # Docker Composeを使用してコンテナを起動
 docker-compose up -d

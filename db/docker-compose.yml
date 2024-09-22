@@ -6,7 +6,7 @@ services:
     image: go-auth-db:postgre-db
     hostname: go-auth-db
     ports:
-      - 5432:5432
+      - "5000:5432"
     volumes:
       #- ./sql:/docker-entrypoint-initdb.d
       - db-store:/var/lib/postgresql/data #DBのデータを永続化

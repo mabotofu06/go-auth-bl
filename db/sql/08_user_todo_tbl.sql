@@ -16,6 +16,6 @@ CREATE TABLE mng_user_todo_tbl(
   delete_date      date,
 
   foreign key(todo_id)    references mng_todo_tbl     (todo_id),
-  foreign key(user_id)    references mng_user_info_tbl(user_id),
+--  foreign key(user_id)    references mng_user_info_tbl(user_id),
   foreign key(color_code) references color_mst        (color_code)
 );

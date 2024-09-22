@@ -10,7 +10,7 @@ CREATE TABLE mng_otp_tbl(
   delete_flag      int       NOT NULL,
   created_datetime timestamp NOT NULL,
   updated_datetime timestamp,
-  delete_date      date,
+  delete_date      date
 
-  foreign key(user_id) references mng_user_auth_tbl(user_id)
+--  foreign key(user_id) references mng_user_auth_tbl(user_id)
 );
