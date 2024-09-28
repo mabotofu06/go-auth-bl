@@ -1,4 +1,4 @@
-module go-auth
+module go-auth-bl
 
 go 1.22.5
 

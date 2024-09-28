@@ -1,16 +1,45 @@
-version: '3.8'
+version: '3'
 
 services:
-  db:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  go-auth-db:
+    container_name: go-auth-db
+    image: go-auth-db:postgre-db
+    hostname: go-auth-db
+    ports:
+      - "5000:5432"
+    volumes:
+      #- ./sql:/docker-entrypoint-initdb.d
+      - db-store:/var/lib/postgresql/data #DBのデータを永続化
+    environment:
+      # Postgreの設定を定義
+      POSTGRES_DB: 'go-auth-db'
+      POSTGRES_USER: 'go-auth-db'
+      POSTGRES_PASSWORD: 'postgres'
+    networks:
+      - go-auth-network
+
+  go-auth-bl:
+    container_name: go-auth-bl
+    image: go-auth-bl:golang
+    hostname: go-auth-bl
     ports:
       - "80:8080"
-    container_name: go-auth
+    environment:
+      # Postgreの設定を定義
+      DB_HOST: 'go-auth-db'
+      DB_PORT: '5000'
+      DB_USER: 'go-auth-db'
+      DB_PASSWORD: 'postgres'
+      DB_NAME: 'go-auth-db'
+      DB_SSLMODE: 'disable'
+      SOLT: 'qawsedrftgyhujikolp'
     networks:
       - go-auth-network
 
 networks:
   go-auth-network:
-    driver: bridge
+    external: true
+
+# DBのデータを永続化
+volumes:
+  db-store:
