@@ -1,10 +1,16 @@
 version: '3.8'
 
 services:
-  app:
+  db:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
       - "80:8080"
     container_name: go-auth
+    networks:
+      - go-auth-network
+
+networks:
+  go-auth-network:
+    driver: bridge

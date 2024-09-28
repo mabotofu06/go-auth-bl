@@ -1,8 +1,12 @@
 #!/bin/bash
 
+cd ./db
+sh build.sh
+cd ..
+
 # コンテナ名とイメージ名を指定
-CONTAINER_NAME="go-auth"
-IMAGE_NAME="go-auth-img"
+CONTAINER_NAME="go-auth-bl"
+IMAGE_NAME="go-auth-bl"
 
 # 既存のコンテナを停止して削除
 echo "===== Stopping and removing existing container... ====="

@@ -13,11 +13,17 @@ type User struct {
 	name string
 }
 
+// const dbHost = "go-auth-db"
+// const port = "5432"
+// const dbUser = "go-auth-db"
+// const dbPassword = "postgres"
+// const dbName = "go-auth-db"
+
 func ConnectDB() (*[]User, error) {
 	// データベースに接続
 	db, err := sql.Open(
 		"postgres",
-		"host=127.0.0.1 port=5000 user=go-auth-db password=postgres dbname=go-auth-db sslmode=disable",
+		"host=go-auth-db port=5432 user=go-auth-db password=postgres dbname=go-auth-db sslmode=disable",
 	)
 	if err != nil {
 		log.Fatal(err)
