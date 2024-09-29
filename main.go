@@ -3,13 +3,17 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"go-auth-bl/controller"
+	con "go-auth-bl/controller"
 	"go-auth-bl/service"
 	"net/http"
 )
 
 func root(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Request received!!")
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+		return
+	}
+	fmt.Printf("Request received!! %s\n", r.URL.Path)
 	fmt.Println("Jsonデータを返します")
 
 	res := map[string]string{
@@ -33,11 +37,12 @@ func main() {
 		Handler: nil, // DefaultServeMux を使用
 	}
 
-	//http://localhost/ にアクセスするとHello, World!が表示される
-	http.HandleFunc("/", root)
 	// ログインAPI
 	//curl -X POST http://localhost/api/login -H "Content-Type: application/json" -d "{\"userId\": \"elf_hinmel\", \"email\": \"\", \"password\": \"password\"}"
-	http.HandleFunc("/api/login", controller.PostLogin)
+	http.HandleFunc("/api/login", con.PostLogin)
+
+	//http://localhost/ にアクセスするとHello, World!が表示される
+	http.HandleFunc("/", root)
 
 	fmt.Println("Starting server at port 8080")
 
