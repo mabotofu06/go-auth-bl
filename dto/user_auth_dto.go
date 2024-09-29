@@ -4,8 +4,11 @@ type UserAuth struct {
 	UserId   string `json:"userId"`
 	Password string `json:"password"`
 	//null許容の場合はポインタ型にする
-	SessionToken     *string `json:"sessionToken"`
-	LastSessinonTime *string `json:"lastSessinonTime"`
+	PasswordHistory1 *string `json:"passwordHistory1"`
+	PasswordHistory2 *string `json:"passwordHistory2"`
+	PasswordHistory3 *string `json:"passwordHistory3"`
+	PasswordFailCnt  int     `json:"passwordFailCnt"`
+	PasswordLockFlag int     `json:"passwordLockFlag"`
 
 	DtoBase
 }

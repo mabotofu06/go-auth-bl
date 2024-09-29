@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	cmn "go-auth-bl/common"
 	"go-auth-bl/dto"
@@ -21,7 +22,7 @@ func GetUserAuthByUserId(userId string) (*dto.UserAuth, error) {
 
 	if len(userAuths) == 0 {
 		fmt.Println("No user auth data found")
-		return nil, nil
+		return nil, errors.New("NotFoundUser")
 	}
 
 	return &userAuths[0], nil

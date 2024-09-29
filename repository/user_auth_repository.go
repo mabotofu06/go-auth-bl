@@ -7,20 +7,12 @@ import (
 	"log"
 )
 
-const tableName = "mng_user_auth_tbl "
-
 // Coution: 大文字でないと外部パッケージから参照できない
 func GetUserAuthsByUserId(userId string, db *sql.DB) ([]dto.UserAuth, error) {
+	const tableName = "mng_user_auth_tbl"
+	query := fmt.Sprintf("SELECT * FROM %s WHERE delete_flag = 0 AND user_id = $1", tableName)
 	// ユーザIDを元にユーザ認証情報を取得
-
-	rows, err := db.Query(
-		"SELECT "+
-			"* "+
-			"FROM "+
-			tableName+
-			"WHERE "+
-			"user_id = $1", userId,
-	)
+	rows, err := db.Query(query, userId)
 
 	if err != nil {
 		fmt.Printf("db.Query: %v\n", err)
@@ -28,15 +20,18 @@ func GetUserAuthsByUserId(userId string, db *sql.DB) ([]dto.UserAuth, error) {
 	}
 	defer rows.Close()
 
-	var userAuths []dto.UserAuth
+	var userAuthList []dto.UserAuth
 
 	for rows.Next() {
 		var userAuth dto.UserAuth
 		if err := rows.Scan(
 			&userAuth.UserId,
 			&userAuth.Password,
-			&userAuth.SessionToken,
-			&userAuth.LastSessinonTime,
+			&userAuth.PasswordHistory1,
+			&userAuth.PasswordHistory2,
+			&userAuth.PasswordHistory3,
+			&userAuth.PasswordFailCnt,
+			&userAuth.PasswordLockFlag,
 			&userAuth.DeleteFlag,
 			&userAuth.CreateDateTime,
 			&userAuth.UpdateDateTime,
@@ -44,7 +39,7 @@ func GetUserAuthsByUserId(userId string, db *sql.DB) ([]dto.UserAuth, error) {
 		); err != nil {
 			log.Fatal(err)
 		}
-		userAuths = append(userAuths, userAuth)
+		userAuthList = append(userAuthList, userAuth)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -52,5 +47,5 @@ func GetUserAuthsByUserId(userId string, db *sql.DB) ([]dto.UserAuth, error) {
 		return nil, err
 	}
 
-	return userAuths, nil
+	return userAuthList, nil
 }

@@ -49,7 +49,7 @@ func EncodePassword(password string) (string, error) {
 	}
 
 	encodedPassword := string(hashedPassword)
-	fmt.Println("Encoded password:", encodedPassword)
+	// fmt.Println("Encoded password:", encodedPassword)
 
 	return encodedPassword, nil
 }
@@ -98,15 +98,6 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 	}
 
 	EncodePassword(loginRequest.Password)
-
-	// pass, err := EncodePassword(loginRequest.Password)
-	// if err != nil {
-	// 	http.Error(
-	// 		res,
-	// 		"Error encoding password",
-	// 		http.StatusInternalServerError,
-	// 	)
-	// }
 
 	// パスワードが一致するか確認
 	if !ComparePassword(
