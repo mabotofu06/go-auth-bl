@@ -6,9 +6,10 @@ import (
 	cmn "go-auth-bl/common"
 	"go-auth-bl/dto"
 	"go-auth-bl/repository"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
-// Coution: 大文字でないと外部パッケージから参照できない
 // ユーザIDを元にユーザ認証情報を取得
 func GetUserAuthByUserId(userId string) (*dto.UserAuth, error) {
 	db := cmn.ConnectDB()
@@ -26,6 +27,31 @@ func GetUserAuthByUserId(userId string) (*dto.UserAuth, error) {
 	}
 
 	return &userAuths[0], nil
+}
+
+// パスワードが一致するか確認
+func PasswordCheck(userAuth *dto.UserAuth, password string) bool {
+	failCnt := userAuth.PasswordFailCnt
+
+	if !ComparePassword(userAuth.Password, password) {
+		failCnt++
+		//テーブルに対してパスワード失敗回数を加算
+		fmt.Println("Password does not match")
+		fmt.Printf("failCnt: %d\n", failCnt)
+
+		return false
+	}
+
+	failCnt = 0
+	fmt.Println("Password matches")
+	//テーブルに対してパスワード失敗回数をリセット
+	return true
+}
+
+// パスワードを比較する関数
+func ComparePassword(hashedPassword, password string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	return err == nil
 }
 
 func AddUserAuth(userId string, password string) (*dto.UserAuth, error) {

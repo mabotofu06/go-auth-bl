@@ -54,12 +54,6 @@ func EncodePassword(password string) (string, error) {
 	return encodedPassword, nil
 }
 
-// パスワードを比較する関数
-func ComparePassword(hashedPassword, password string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
-	return err == nil
-}
-
 /**
 * @param w http.ResponseWriter
 * @param r *http.Request
@@ -88,31 +82,18 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 	// サービス層を呼び出してデータを取得
 	userAuth, err := service.GetUserAuthByUserId(loginRequest.UserId)
 	if err != nil {
-		http.Error(
-			res,
-			"Error fetching user auth data",
-			http.StatusInternalServerError,
-		)
-
+		fmt.Println("Error fetching user auth data:", err)
+		http.Error(res, "Error fetching user auth data", http.StatusInternalServerError)
 		return
 	}
 
 	EncodePassword(loginRequest.Password)
 
 	// パスワードが一致するか確認
-	if !ComparePassword(
-		userAuth.Password,
-		os.Getenv("SALT")+loginRequest.Password,
-	) {
+	if !service.PasswordCheck(userAuth, os.Getenv("SALT")+loginRequest.Password) {
 		fmt.Println("Password does not match")
-		http.Error(
-			res,
-			"Password does not match",
-			http.StatusUnauthorized,
-		)
+		http.Error(res, "Password does not match", http.StatusUnauthorized)
 		return
-	} else {
-		fmt.Println("Password matches")
 	}
 
 	// レスポンスとしてJSONを返す
