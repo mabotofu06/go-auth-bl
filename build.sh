@@ -4,6 +4,11 @@ cd ./db
 sh build.sh
 cd ..
 
+# 静的ページをコピー
+echo "===== Copying static pages... ====="
+cp -r ../go-auth-ui/build ./
+echo ""
+
 # コンテナ名とイメージ名を指定
 CONTAINER_NAME="go-auth-bl"
 IMAGE_NAME="go-auth-bl:golang"
