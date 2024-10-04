@@ -5,7 +5,10 @@ sh build.sh
 cd ..
 
 # 静的ページをコピー
-echo "===== Copying static pages... ====="
+echo "===== Build and Copying static pages... ====="
+cd ../go-auth-ui
+npm run build
+cd ../go-auth-bl
 cp -r ../go-auth-ui/build ./
 echo ""
 

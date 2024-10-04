@@ -79,6 +79,8 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	fmt.Printf("Login request: %+v\n", loginRequest)
+
 	// サービス層を呼び出してデータを取得
 	userAuth, err := service.GetUserAuthByUserId(loginRequest.UserId)
 	if err != nil {
@@ -96,16 +98,10 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// レスポンスとしてJSONを返す
-	res.Header().Set("Content-Type", "application/json")
-	res.WriteHeader(http.StatusOK)
+	fmt.Printf("ユーザ情報: %v\n", userAuth)
 
-	err = json.NewEncoder(res).Encode(userAuth)
-	if err != nil {
-		http.Error(
-			res,
-			"Error encoding JSON",
-			http.StatusInternalServerError,
-		)
-	}
+	//レスポンスとしてリダイレクトを返す
+	res.Header().Set("Content-Type", "application/json")
+	http.Redirect(res, req, "http://localhost/Portal", http.StatusMovedPermanently)
+	//	res.WriteHeader(http.StatusOK)
 }
