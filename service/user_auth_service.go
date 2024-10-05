@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	cmn "go-auth-bl/common"
 	"go-auth-bl/dto"
@@ -16,36 +15,42 @@ func GetUserAuthByUserId(userId string) (*dto.UserAuth, error) {
 	defer db.Close() // 関数終了時に接続を閉じる
 
 	// サービス層を呼び出してデータを取得
-	userAuths, err := repository.GetUserAuthsByUserId(userId, db)
+	userAuth, err := repository.GetUserAuthByUserId(userId, db)
 	cmn.ErrorCheck(err)
 
-	fmt.Printf("userAuths: %v\n", userAuths)
+	fmt.Printf("userAuth: %v\n", userAuth)
 
-	if len(userAuths) == 0 {
-		fmt.Println("No user auth data found")
-		return nil, errors.New("NotFoundUser")
-	}
-
-	return &userAuths[0], nil
+	return userAuth, nil
 }
 
 // パスワードが一致するか確認
-func PasswordCheck(userAuth *dto.UserAuth, password string) bool {
+func PasswordCheck(userAuth *dto.UserAuth, password string) (bool, error) {
+	db := cmn.ConnectDB()
+	defer db.Close() // 関数終了時に接続を閉じる
+
+	if userAuth.PasswordLockFlag != 0 {
+		fmt.Println("パスワードがロックされています")
+		return false, nil
+	}
+
 	failCnt := userAuth.PasswordFailCnt
 
 	if !ComparePassword(userAuth.Password, password) {
 		failCnt++
 		//テーブルに対してパスワード失敗回数を加算
-		fmt.Println("Password does not match")
+		fmt.Println("パスワードが一致しませんでした")
 		fmt.Printf("failCnt: %d\n", failCnt)
 
-		return false
+		//パスワードロック込みでDBを更新
+		err := repository.UpdatePasswordFailNum(userAuth.UserId, failCnt, db)
+
+		return false, err
 	}
 
-	failCnt = 0
 	fmt.Println("Password matches")
 	//テーブルに対してパスワード失敗回数をリセット
-	return true
+	err := repository.ResetPasswordLock(userAuth.UserId, db)
+	return true, err
 }
 
 // パスワードを比較する関数

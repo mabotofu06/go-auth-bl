@@ -6,12 +6,17 @@ import (
 	"net/http"
 )
 
-// func root() {
-// 	fmt.Println("ログインページを返します。")
+func root(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("ログインページを返します。")
+	// レスポンスヘッダーに情報を追加
+	w.Header().Set("sesid", "session-id-1234-5678-9000")
+	w.Header().Set("acc", "acc-id-1234-5678-9000")
+	w.Header().Set("sesid", "session-id-1234-5678-9000")
+	w.Header().Set("sesid", "session-id-1234-5678-9000")
 
-// 	// HTMLファイルを返す
-// 	return http.FileServer(http.Dir("./build"))
-// }
+	// HTMLファイルを返す
+	http.FileServer(http.Dir("./build")).ServeHTTP(w, r)
+}
 
 func main() {
 	server := http.Server{
@@ -24,7 +29,7 @@ func main() {
 	http.HandleFunc("/api/login", con.PostLogin)
 
 	//http://localhost/ にアクセスするとHello, World!が表示される
-	http.Handle("/", http.FileServer(http.Dir("./build")))
+	http.HandleFunc("/", root)
 
 	fmt.Println("Starting server at port 8080")
 

@@ -92,7 +92,14 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 	EncodePassword(loginRequest.Password)
 
 	// パスワードが一致するか確認
-	if !service.PasswordCheck(userAuth, os.Getenv("SALT")+loginRequest.Password) {
+	passCheck, err := service.PasswordCheck(userAuth, os.Getenv("SALT")+loginRequest.Password)
+	if err != nil {
+		fmt.Println("fatal error")
+		http.Error(res, "Unexpect Error", http.StatusInternalServerError)
+		return
+	}
+
+	if !passCheck {
 		fmt.Println("Password does not match")
 		http.Error(res, "Password does not match", http.StatusUnauthorized)
 		return
