@@ -7,15 +7,28 @@ import (
 )
 
 func root(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("ログインページを返します。")
-	// レスポンスヘッダーに情報を追加
+	//TODO:認証チェック
+
 	w.Header().Set("sesid", "session-id-1234-5678-9000")
 	w.Header().Set("acc", "acc-id-1234-5678-9000")
 	w.Header().Set("sesid", "session-id-1234-5678-9000")
 	w.Header().Set("sesid", "session-id-1234-5678-9000")
 
-	// HTMLファイルを返す
+	// 静的ファイルを返す
 	http.FileServer(http.Dir("./build")).ServeHTTP(w, r)
+
+	if r.URL.Path != "/" {
+		return
+	}
+
+	queryParams := r.URL.Query()
+	for key, values := range queryParams {
+		for _, value := range values {
+			fmt.Printf("Query parameter: %s = %s\n", key, value)
+		}
+	}
+
+	fmt.Printf("認可コード取得処理を開始します code=%s\n", queryParams["code"])
 }
 
 func main() {
