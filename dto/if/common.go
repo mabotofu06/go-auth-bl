@@ -8,6 +8,7 @@ type Header struct {
 
 type Response[T any] struct {
 	Status int    `json:"status"`
+	Type   string `json:"type"`
 	Code   string `json:"code"`
 	Msg    string `json:"message"`
 	Data   *T     `json:"data"`

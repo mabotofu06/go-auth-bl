@@ -46,33 +46,33 @@ func EncodePassword(password string) (string, error) {
 func PostLogin(res http.ResponseWriter, req *http.Request) {
 	// POSTメソッド以外はエラー
 	if !IsMethod(POST, req) {
-		panic(a_err.BadRequestErr)
+		a_err.Throw(a_err.NewRequestErr("リクエストメソッドが不適切です"))
 	}
 	// リクエストボディをJSONとしてパース
 	var request apiif.ReqLogin
 	var err error
 	err = json.NewDecoder(req.Body).Decode(&request)
 	if err != nil {
-		panic(a_err.BadRequestErr)
+		a_err.Throw(a_err.NewRequestErr("リクエストボディが不適切です"))
 	}
 	fmt.Printf("Login request: %+v\n", request)
 	// サービス層を呼び出してデータを取得
 	userAuth, err := service.GetUserAuthByUserId(request.UsrId)
 	if err != nil {
 		if err == a_err.NotFoundErr {
-			panic(a_err.NotFoundErr)
+			a_err.Throw(a_err.NewAuthErr("ユーザー名またはパスワードが違います"))
 		}
-		panic(a_err.InternalServerErr)
+		a_err.Throw(a_err.NewServerErr("予期せぬエラーが発生しました"))
 	}
 
 	// パスワードが一致するか確認
 	EncodePassword(request.Password)
 	passCheck, err := service.PasswordCheck(userAuth, os.Getenv("SALT")+request.Password)
 	if err != nil {
-		panic(a_err.InternalServerErr)
+		a_err.Throw(a_err.NewServerErr("予期せぬエラーが発生しました"))
 	}
 	if !passCheck {
-		panic(a_err.NotFoundErr)
+		a_err.Throw(a_err.NewAuthErr("ユーザー名またはパスワードが違います"))
 	}
 
 	fmt.Printf("ユーザ情報: %v\n", userAuth)
@@ -85,7 +85,8 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 	body := apiif.Response[apiif.ResLogin]{
 		Status: http.StatusOK,
 		Code:   "I0001",
-		Msg:    "Success",
+		Type:   "正常",
+		Msg:    "通信が正常終了しました",
 		Data: &apiif.ResLogin{
 			UsrId:   userAuth.UserId,
 			Session: "dummy_session",
@@ -93,20 +94,5 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 	}
 	json, _ := json.Marshal(body)
 	res.WriteHeader(http.StatusOK)
-	res.Write(json)
-}
-
-func ResError(res http.ResponseWriter, status int, code string, msg string) {
-	res.Header().Set("Content-Type", "application/json")
-
-	body := apiif.Response[interface{}]{
-		Status: status,
-		Code:   code,
-		Msg:    msg,
-		Data:   nil,
-	}
-	json, _ := json.Marshal(body)
-
-	res.WriteHeader(status)
 	res.Write(json)
 }
