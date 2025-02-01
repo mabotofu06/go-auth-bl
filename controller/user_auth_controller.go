@@ -16,6 +16,11 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
+type LoginResponse struct {
+	UserId string `json:"userId"`
+	Token  string `json:"token"`
+}
+
 const (
 	GET    = "GET"
 	POST   = "POST"
@@ -59,6 +64,7 @@ func EncodePassword(password string) (string, error) {
 * @param r *http.Request
  */
 func PostLogin(res http.ResponseWriter, req *http.Request) {
+	// POSTメソッド以外はエラー
 	if !IsMethod(POST, req) {
 		SendNotAllowMethod(req, res)
 		return
@@ -107,8 +113,20 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 
 	fmt.Printf("ユーザ情報: %v\n", userAuth)
 
-	//レスポンスとしてリダイレクトを返す
+	// レスポンスを返す
+	res.WriteHeader(http.StatusOK)
 	res.Header().Set("Content-Type", "application/json")
-	http.Redirect(res, req, "http://localhost/Portal", http.StatusMovedPermanently)
-	//	res.WriteHeader(http.StatusOK)
+	// CORS設定
+	res.Header().Set("Access-Control-Allow-Origin", "*")
+	res.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	res.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	response := LoginResponse{
+		UserId: userAuth.UserId,
+		Token:  "dummy_token",
+	}
+	if err := json.NewEncoder(res).Encode(response); err != nil {
+		http.Error(res, "Error encoding JSON", http.StatusInternalServerError)
+		return
+	}
 }
