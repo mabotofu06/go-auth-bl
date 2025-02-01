@@ -28,14 +28,7 @@ func root(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	queryParams := r.URL.Query()
-	for key, values := range queryParams {
-		for _, value := range values {
-			fmt.Printf("Query parameter: %s = %s\n", key, value)
-		}
-	}
-
-	fmt.Printf("認可コード取得処理を開始します code=%s\n", queryParams["code"])
+	//fmt.Printf("認可コード取得処理を開始します code=%s\n", queryParams["code"])
 }
 
 func main() {
@@ -44,11 +37,11 @@ func main() {
 		Handler: middleware.ErrorHandler(http.DefaultServeMux),
 	}
 
+	//http://localhost/ にアクセスすると画面が返却
+	http.HandleFunc("/", root)
 	// ログインAPI
 	//curl -X POST http://localhost/api/login -H "Content-Type: application/json" -d "{\"userId\": \"elf_hinmel\", \"email\": \"\", \"password\": \"password\"}"
 	http.HandleFunc("/api/login", con.PostLogin)
-	//http://localhost/ にアクセスするとHello, World!が表示される
-	http.HandleFunc("/", root)
 
 	fmt.Println("Starting server at port 8080")
 

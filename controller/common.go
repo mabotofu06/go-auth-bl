@@ -1,0 +1,74 @@
+package controller
+
+import (
+	"encoding/json"
+	"fmt"
+	apiif "go-auth-bl/dto/if"
+	a_err "go-auth-bl/error"
+	"net/http"
+	"os"
+
+	"golang.org/x/crypto/bcrypt"
+)
+
+const (
+	GET    = "GET"
+	POST   = "POST"
+	PUT    = "PUT"
+	DELETE = "DELETE"
+)
+
+// リクエストメソッドが不適切な場合はエラーを返す
+func ReqMethodCheck(req *http.Request, method string) {
+	if req.Method != method {
+		panic(a_err.NewRequestErr("リクエストメソッドが不適切です"))
+	}
+}
+
+// POSTリクエストのリクエストボディを取得（リクエストボディが不適切な場合はエラーを返す）
+func GetReqBody[T any](req *http.Request) T {
+	var request T
+
+	if err := json.NewDecoder(req.Body).Decode(&request); err != nil {
+		a_err.Throw(a_err.NewRequestErr("リクエストボディが不適切です"))
+	}
+	fmt.Printf("request: %+v\n", request)
+	return request
+}
+
+// APIの正常終了時のレスポンスを返す
+func ResOk[T any](res http.ResponseWriter, data *T) {
+	fmt.Printf("response data: %+v\n", data)
+
+	res.Header().Set("Content-Type", "application/json")
+	resBody := apiif.Response[T]{
+		Status: http.StatusOK,
+		Code:   "I0001",
+		Type:   "正常",
+		Msg:    "通信が正常終了しました",
+		Data:   data,
+	}
+
+	json, err := json.Marshal(resBody)
+	if err != nil {
+		panic(a_err.NewServerErr("予期せぬエラーが発生しました"))
+	}
+	res.WriteHeader(http.StatusOK)
+	res.Write(json)
+}
+
+// bcryptを使ってパスワードをハッシュ化
+// エンコードされた文字列の長さは60文字
+func EncodePassword(password string) (string, error) {
+	salt := os.Getenv("SALT")
+	pass := salt + password
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
+	if err != nil {
+		fmt.Println("Error hashing password:", err)
+		return "", err
+	}
+	encodedPassword := string(hashedPassword)
+	// fmt.Println("Encoded password:", encodedPassword)
+	return encodedPassword, nil
+}
