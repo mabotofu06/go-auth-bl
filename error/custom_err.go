@@ -3,16 +3,37 @@ package a_err
 import "fmt"
 
 type CustomError struct {
-	code    int
-	message string
+	Status int
+	Code   string
+	Msg    string
 }
 
 func (e *CustomError) Error() string {
-	return fmt.Sprintf("code: %d, message: %s", e.code, e.message)
+	return fmt.Sprintf("Status: %d, Code: %s, Msg: %s", e.Status, e.Code, e.Msg)
 }
 
-var NotFoundErr = &CustomError{404, "Not Found"}
-var InternalServerErr = &CustomError{500, "Internal Server Error"}
-var BadRequestErr = &CustomError{400, "Bad Request"}
-var UnauthorizedErr = &CustomError{401, "Unauthorized"}
-var ForbiddenErr = &CustomError{403, "Forbidden"}
+var InternalServerErr = &CustomError{
+	500,
+	"E0001",
+	"Internal Server Error",
+}
+var BadRequestErr = &CustomError{
+	400,
+	"W0001",
+	"Bad Request",
+}
+var UnauthorizedErr = &CustomError{
+	401,
+	"W0002",
+	"Unauthorized",
+}
+var ForbiddenErr = &CustomError{
+	403,
+	"W0003",
+	"Forbidden",
+}
+var NotFoundErr = &CustomError{
+	404,
+	"W0004",
+	"Not Found",
+}

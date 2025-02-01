@@ -3,23 +3,14 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	apiif "go-auth-bl/dto/if"
+	a_err "go-auth-bl/error"
 	"go-auth-bl/service"
 	"net/http"
 	"os"
 
 	"golang.org/x/crypto/bcrypt"
 )
-
-type LoginRequest struct {
-	UserId   string `json:"userId"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-type LoginResponse struct {
-	UserId string `json:"userId"`
-	Token  string `json:"token"`
-}
 
 const (
 	GET    = "GET"
@@ -30,15 +21,6 @@ const (
 
 func IsMethod(method string, req *http.Request) bool {
 	return req.Method == method
-}
-
-func SendNotAllowMethod(req *http.Request, res http.ResponseWriter) {
-	fmt.Println("Invalid request method for", req.URL.Path)
-	http.Error(
-		res,
-		"Invalid request method",
-		http.StatusMethodNotAllowed,
-	)
 }
 
 // bcryptを使ってパスワードをハッシュ化
@@ -52,10 +34,8 @@ func EncodePassword(password string) (string, error) {
 		fmt.Println("Error hashing password:", err)
 		return "", err
 	}
-
 	encodedPassword := string(hashedPassword)
 	// fmt.Println("Encoded password:", encodedPassword)
-
 	return encodedPassword, nil
 }
 
@@ -66,67 +46,67 @@ func EncodePassword(password string) (string, error) {
 func PostLogin(res http.ResponseWriter, req *http.Request) {
 	// POSTメソッド以外はエラー
 	if !IsMethod(POST, req) {
-		SendNotAllowMethod(req, res)
-		return
+		panic(a_err.BadRequestErr)
 	}
-
 	// リクエストボディをJSONとしてパース
-	var loginRequest LoginRequest
+	var request apiif.ReqLogin
 	var err error
-
-	err = json.NewDecoder(req.Body).Decode(&loginRequest)
+	err = json.NewDecoder(req.Body).Decode(&request)
 	if err != nil {
-		http.Error(
-			res,
-			"Error parsing JSON",
-			http.StatusBadRequest,
-		)
-
-		return
+		panic(a_err.BadRequestErr)
 	}
-
-	fmt.Printf("Login request: %+v\n", loginRequest)
-
+	fmt.Printf("Login request: %+v\n", request)
 	// サービス層を呼び出してデータを取得
-	userAuth, err := service.GetUserAuthByUserId(loginRequest.UserId)
+	userAuth, err := service.GetUserAuthByUserId(request.UsrId)
 	if err != nil {
-		fmt.Println("Error fetching user auth data:", err)
-		http.Error(res, "Error fetching user auth data", http.StatusInternalServerError)
-		return
+		if err == a_err.NotFoundErr {
+			panic(a_err.NotFoundErr)
+		}
+		panic(a_err.InternalServerErr)
 	}
-
-	EncodePassword(loginRequest.Password)
 
 	// パスワードが一致するか確認
-	passCheck, err := service.PasswordCheck(userAuth, os.Getenv("SALT")+loginRequest.Password)
+	EncodePassword(request.Password)
+	passCheck, err := service.PasswordCheck(userAuth, os.Getenv("SALT")+request.Password)
 	if err != nil {
-		fmt.Println("fatal error")
-		http.Error(res, "Unexpect Error", http.StatusInternalServerError)
-		return
+		panic(a_err.InternalServerErr)
 	}
-
 	if !passCheck {
-		fmt.Println("Password does not match")
-		http.Error(res, "Password does not match", http.StatusUnauthorized)
-		return
+		panic(a_err.NotFoundErr)
 	}
 
 	fmt.Printf("ユーザ情報: %v\n", userAuth)
-
 	// レスポンスを返す
-	res.WriteHeader(http.StatusOK)
 	res.Header().Set("Content-Type", "application/json")
-	// CORS設定
-	res.Header().Set("Access-Control-Allow-Origin", "*")
-	res.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	res.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	// res.Header().Set("Access-Control-Allow-Origin", "*")
+	// res.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	// res.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
-	response := LoginResponse{
-		UserId: userAuth.UserId,
-		Token:  "dummy_token",
+	body := apiif.Response[apiif.ResLogin]{
+		Status: http.StatusOK,
+		Code:   "I0001",
+		Msg:    "Success",
+		Data: &apiif.ResLogin{
+			UsrId:   userAuth.UserId,
+			Session: "dummy_session",
+		},
 	}
-	if err := json.NewEncoder(res).Encode(response); err != nil {
-		http.Error(res, "Error encoding JSON", http.StatusInternalServerError)
-		return
+	json, _ := json.Marshal(body)
+	res.WriteHeader(http.StatusOK)
+	res.Write(json)
+}
+
+func ResError(res http.ResponseWriter, status int, code string, msg string) {
+	res.Header().Set("Content-Type", "application/json")
+
+	body := apiif.Response[interface{}]{
+		Status: status,
+		Code:   code,
+		Msg:    msg,
+		Data:   nil,
 	}
+	json, _ := json.Marshal(body)
+
+	res.WriteHeader(status)
+	res.Write(json)
 }

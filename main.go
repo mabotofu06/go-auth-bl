@@ -3,11 +3,18 @@ package main
 import (
 	"fmt"
 	con "go-auth-bl/controller"
+	"go-auth-bl/middleware"
 	"net/http"
 )
 
 func root(w http.ResponseWriter, r *http.Request) {
 	//TODO:認証チェック
+	//s := r.Header.Get("sesid")
+	// if s != "auth" {
+	// 	fmt.Println("認証エラー")
+	// 	http.Error(w, "認証エラー", http.StatusUnauthorized)
+	// 	return
+	// }
 
 	w.Header().Set("sesid", "session-id-1234-5678-9000")
 	w.Header().Set("acc", "acc-id-1234-5678-9000")
@@ -34,13 +41,12 @@ func root(w http.ResponseWriter, r *http.Request) {
 func main() {
 	server := http.Server{
 		Addr:    ":8080",
-		Handler: nil, // DefaultServeMux を使用
+		Handler: middleware.ErrorHandler(http.DefaultServeMux),
 	}
 
 	// ログインAPI
 	//curl -X POST http://localhost/api/login -H "Content-Type: application/json" -d "{\"userId\": \"elf_hinmel\", \"email\": \"\", \"password\": \"password\"}"
 	http.HandleFunc("/api/login", con.PostLogin)
-
 	//http://localhost/ にアクセスするとHello, World!が表示される
 	http.HandleFunc("/", root)
 

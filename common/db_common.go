@@ -8,9 +8,8 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// データベースに接続
 func ConnectDB() *sql.DB {
-	// データベースに接続
-
 	dbConnectInfo := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		os.Getenv("DB_HOST"),

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	cmn "go-auth-bl/common"
 	"go-auth-bl/dto"
-	a_err "go-auth-bl/error"
 	"go-auth-bl/repository"
 
 	"golang.org/x/crypto/bcrypt"
@@ -17,13 +16,10 @@ func GetUserAuthByUserId(userId string) (*dto.UserAuth, error) {
 
 	// サービス層を呼び出してデータを取得
 	userAuth, err := repository.GetUserAuthByUserId(userId, db)
-	if err != nil && err == a_err.NotFoundErr {
-		return nil, a_err.NotFoundErr
+	if err != nil {
+		return nil, err
 	}
-	cmn.ErrorCheck(err) //TODO: ここでエラーチェックを行うが、ユーザーがいなかった場合落ちてしまうので再考が必要
-
 	fmt.Printf("userAuth: %v\n", userAuth)
-
 	return userAuth, nil
 }
 
