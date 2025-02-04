@@ -12,9 +12,12 @@ func main() {
 		Handler: http.DefaultServeMux,
 	}
 
+	//認可コード要求API
+	http.HandleFunc("/api/v1/auth_permission", ApiWrapper(con.GetPermission))
+
 	// ログインAPI
 	//curl -X POST http://localhost/api/login -H "Content-Type: application/json" -d "{\"userId\": \"elf_hinmel\", \"email\": \"\", \"password\": \"password\"}"
-	http.HandleFunc("/api/login", ApiWrapper(con.PostLogin))
+	http.HandleFunc("/api/v1/login", ApiWrapper(con.PostLogin))
 
 	//http://localhost/ にアクセスすると画面が返却
 	http.HandleFunc("/", ApiWrapper(root))

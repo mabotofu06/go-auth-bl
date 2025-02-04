@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gorilla/sessions"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -18,6 +19,8 @@ const (
 	PUT    = "PUT"
 	DELETE = "DELETE"
 )
+
+var Store = sessions.NewCookieStore([]byte("go-auth-session"))
 
 // リクエストメソッドが不適切な場合はエラーを返す
 func ReqMethodCheck(res http.ResponseWriter, req *http.Request, method string) *a_err.CustomError {
