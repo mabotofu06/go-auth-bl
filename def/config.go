@@ -19,3 +19,12 @@ var CONFIG = GoAuthConfig{
 		"access_token":    {name: "アクセストークン要求", method: "GET", endpoint: "/api/access_token"},
 	},
 }
+
+var ERROR_MESSAGE = map[string]string{
+	"W0001": "リクエストメソッドが不適切です",
+	"W0002": "リクエストパラメータが不適切です",
+	"W0003": "認証エラーが発生しました",
+	"W0005": "ユーザー名またはパスワードが違います",
+
+	"E0001": "予期せぬエラーが発生しました",
+}

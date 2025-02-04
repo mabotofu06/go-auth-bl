@@ -5,6 +5,7 @@ import (
 	"fmt"
 	apiif "go-auth-bl/dto/if"
 	a_err "go-auth-bl/error"
+	"go-auth-bl/middleware"
 	"net/http"
 	"os"
 
@@ -19,21 +20,37 @@ const (
 )
 
 // リクエストメソッドが不適切な場合はエラーを返す
-func ReqMethodCheck(req *http.Request, method string) {
+func ReqMethodCheck(res http.ResponseWriter, req *http.Request, method string) *a_err.CustomError {
 	if req.Method != method {
-		panic(a_err.NewRequestErr("リクエストメソッドが不適切です"))
+		err := a_err.NewRequestErr("リクエストメソッドが不適切です")
+
+		fmt.Printf("リクエストメソッドが不適切です: %s\n", req.Method)
+		middleware.ResError(res, err)
+		return err
 	}
+	return nil
 }
 
 // POSTリクエストのリクエストボディを取得（リクエストボディが不適切な場合はエラーを返す）
-func GetReqBody[T any](req *http.Request) T {
+func GetReqBody[T any](res http.ResponseWriter, req *http.Request) (*T, *a_err.CustomError) {
+	if req.Body == nil {
+		err := a_err.NewRequestErr("リクエストボディが空です")
+		fmt.Println("リクエストボディが空です")
+		middleware.ResError(res, err)
+		return nil, err
+	}
+
+	defer req.Body.Close()
 	var request T
 
 	if err := json.NewDecoder(req.Body).Decode(&request); err != nil {
-		a_err.Throw(a_err.NewRequestErr("リクエストボディが不適切です"))
+		err := a_err.NewRequestErr("リクエストボディが不適切です")
+		fmt.Println("リクエストボディエンコード中にエラーが発生しました:", err)
+		middleware.ResError(res, err)
 	}
+
 	fmt.Printf("request: %+v\n", request)
-	return request
+	return &request, nil
 }
 
 // APIの正常終了時のレスポンスを返す
@@ -51,7 +68,8 @@ func ResOk[T any](res http.ResponseWriter, data *T) {
 
 	json, err := json.Marshal(resBody)
 	if err != nil {
-		panic(a_err.NewServerErr("予期せぬエラーが発生しました"))
+		middleware.ResError(res, a_err.NewServerErr("予期せぬエラーが発生しました"))
+		return
 	}
 	res.WriteHeader(http.StatusOK)
 	res.Write(json)

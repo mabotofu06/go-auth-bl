@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"encoding/json"
+	"fmt"
 	apiif "go-auth-bl/dto/if"
 	a_err "go-auth-bl/error"
 	"log"
@@ -23,15 +24,20 @@ func ErrorHandler(next http.Handler) http.Handler {
 				if !ok {
 					customErr = a_err.NewServerErr("予期せぬエラーが発生しました")
 				}
-				resError(w, customErr)
+				ResError(w, customErr)
 			}()
 
 			next.ServeHTTP(w, r)
 		})
 }
 
-func resError(res http.ResponseWriter, err *a_err.CustomError) {
+func ResError(res http.ResponseWriter, err *a_err.CustomError) {
 	res.Header().Set("Content-Type", "application/json")
+
+	if err == nil {
+		fmt.Println("エラーがnilです")
+		err = a_err.NewServerErr("予期せぬエラーが発生しました")
+	}
 
 	body := apiif.Response[any]{
 		Status: err.Status,
@@ -40,6 +46,7 @@ func resError(res http.ResponseWriter, err *a_err.CustomError) {
 		Msg:    err.Msg,
 		Data:   nil,
 	}
+	fmt.Printf("response : %+v\n", body)
 	json, _ := json.Marshal(body)
 
 	res.WriteHeader(err.Status)
