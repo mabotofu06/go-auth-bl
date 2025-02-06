@@ -1,29 +1,16 @@
 package controller
 
 import (
-	"encoding/gob"
 	"fmt"
+	"go-auth-bl/internal/middleware"
+	"go-auth-bl/internal/session"
 	"net/http"
-	"time"
 
 	"github.com/google/uuid"
-	"github.com/gorilla/sessions"
 )
-
-type AuthSession struct {
-	ClientId    string
-	RedirectUri string
-	Scope       string
-	State       string
-}
 
 type ResAuth struct {
 	Status string `json:"status"`
-}
-
-func init() {
-	// gobパッケージに構造体を登録
-	gob.Register(AuthSession{})
 }
 
 /**
@@ -47,39 +34,28 @@ func GetPermission(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("scope=%s\n", scope)
 	fmt.Printf("state=%s\n", state)
 
-	// パラメータチェック
+	// TODO:パラメータチェック
 	// if rtype != "code" || cid == "" || ruri == "" {
 	// 	middleware.ResError(res, a_err.NewRequestErr("パラメータが不適切です"))
 	// 	return
 	// }
 	//TODO: クライアントIDチェック
 	//clientInfo, err := service.GetClientInfo(cid)
-
 	//TODO: リダイレクトURIチェック
 
-	// スコープチェック
-	// ステートチェック
-
-	//redirect_uri := queryParams.Get("redirect_uri")
-	//fmt.Printf("認可コード発行処理を開始します code=%s\n", code)
-
-	// Basic認証
-	req.Header.Get("Authorization")
-
-	session, _ := Store.Get(req, "session")
 	// セッションID発行
 	sessionId := uuid.New().String()
-	// 認可情報をセッションに保存
-	session.Values[sessionId] = AuthSession{
+	permission := session.PermissionInfo{
 		ClientId:    cid,
 		RedirectUri: ruri,
 		Scope:       scope,
 		State:       state,
 	}
-	session.Options = &sessions.Options{
-		MaxAge: int((30 * time.Minute).Seconds()), // 30分の有効期限
+	// 認可情報をセッションに保存(有効期限30分)
+	if err := session.SetValue[session.PermissionInfo](res, req, sessionId, permission, 30*60); err != nil {
+		middleware.ResError(res, err)
+		return
 	}
-	session.Save(req, res)
 	res.Header().Set("sesid", sessionId)
 
 	body := ResAuth{Status: "OK"}

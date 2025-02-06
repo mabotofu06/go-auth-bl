@@ -7,19 +7,13 @@ import (
 	apiif "go-auth-bl/internal/dto/if"
 	"go-auth-bl/internal/middleware"
 	"go-auth-bl/internal/service"
+	"go-auth-bl/internal/session"
 	a_err "go-auth-bl/pkg/error"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/google/uuid"
-	"github.com/gorilla/sessions"
 )
-
-type TokenSession struct {
-	AccessToken string
-	RedirectUri string
-}
 
 // ログインAPI
 func PostLogin(res http.ResponseWriter, req *http.Request) {
@@ -33,17 +27,15 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 
 	sessionId := req.Header.Get("Session-Id")
 	fmt.Printf("sessionId: %s\n", sessionId)
-	session, _ := Store.Get(req, "session")
 
-	authSession := AuthSession{}
+	authSession, err := session.GetValue[session.PermissionInfo](sessionId, req)
 
-	if val, ok := session.Values[sessionId]; ok {
-		authSession = val.(AuthSession)
-		fmt.Printf("ClientId: %s, RedirectUri: %s, Scope: %s, State: %s\n",
-			authSession.ClientId, authSession.RedirectUri, authSession.Scope, authSession.State)
-	} else {
+	if err != nil {
 		fmt.Printf("セッションが存在しません\n")
+		middleware.ResError(res, a_err.NewAuthErr("認可エラー"))
+		return
 	}
+	fmt.Printf("authSession: %+v\n", authSession)
 
 	userAuth, err := getUserAuth(reqBody.UsrId)
 	if err != nil {
@@ -58,23 +50,23 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 	//認可コードとアクセストークンを発行
 	code := uuid.New().String()
 	accessToken := uuid.New().String()
-	//認可コードでセッションに保存
-	session.Values[code] = TokenSession{
+	tokenSession := session.TokenInfo{
 		AccessToken: accessToken,
 		RedirectUri: authSession.RedirectUri,
 	}
-	session.Options = &sessions.Options{
-		MaxAge: int((30 * time.Second).Seconds()), // 認可コードは30秒の有効期限
+	if err := session.SetValue[session.TokenInfo](res, req, code, tokenSession, 30); err != nil {
+		middleware.ResError(res, err)
+		return
 	}
-	session.Save(req, res)
 
 	// レスポンスを返す
-	data := apiif.ResLogin{
-		UsrId:   userAuth.UserId,
-		Session: "dummy_session",
-	}
+	http.Redirect(res, req, "/api/v1/access_token"+"?code="+code, http.StatusFound)
+	// data := apiif.ResLogin{
+	// 	UsrId:   userAuth.UserId,
+	// 	Session: "dummy_session",
+	// }
 
-	ResOk[apiif.ResLogin](res, &data)
+	// ResOk[apiif.ResLogin](res, &data)
 }
 
 // サービス層を呼び出してデータを取得

@@ -2,7 +2,7 @@
 \c go-auth-db
 
 --認可情報管理テーブル
-CREATE TABLE mng_permission_inf_tbl(
+CREATE TABLE mng_permission_info_tbl(
   permission_id   varchar(10)  NOT NULL primary key,
   token           varchar(50),
   expire_datetime timestamp,
@@ -14,5 +14,5 @@ CREATE TABLE mng_permission_inf_tbl(
   delete_date      date,
 );
 
-INSERT INTO mng_client_info_tbl VALUES
-( 'CS10000000', 'API', 0, now(), NULL, NULL);
+--INSERT INTO mng_client_info_tbl VALUES
+--( 'CS10000000', 'API', 0, now(), NULL, NULL);

@@ -1,9 +1,9 @@
 package controller
 
 import (
-	"encoding/gob"
 	"fmt"
 	"go-auth-bl/internal/middleware"
+	"go-auth-bl/internal/session"
 	a_err "go-auth-bl/pkg/error"
 	"net/http"
 	"time"
@@ -12,11 +12,6 @@ import (
 type ResAccessToken struct {
 	AccessToken string `json:"access_token"`
 	Expire      int    `json:"expire"`
-}
-
-func init() {
-	// gobパッケージに構造体を登録
-	gob.Register(TokenSession{})
 }
 
 /**
@@ -37,33 +32,30 @@ func GetAccessToken(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("state=%s\n", state)
 
 	// パラメータチェック
-	if code != "" || ruri == "" {
-		middleware.ResError(res, a_err.NewRequestErr("パラメータが不適切です"))
-		return
-	}
+	// if code != "" || ruri == "" {
+	// 	middleware.ResError(res, a_err.NewRequestErr("パラメータが不適切です"))
+	// 	return
+	// }
 
 	// ログインAPIで設定したTokenセッション取得
-	session, _ := Store.Get(req, "session")
-	token := TokenSession{}
-
-	if val, ok := session.Values[code]; ok {
-		token = val.(TokenSession)
-		fmt.Printf("token: %+v\n", token)
-	} else {
-		middleware.ResError(res, a_err.NewRequestErr("認可エラー"))
+	tokenSession, err := session.GetValue[session.TokenInfo](code, req)
+	if err != nil {
+		fmt.Printf("セッションが存在しません\n")
+		middleware.ResError(res, a_err.NewAuthErr("認可エラー"))
 		return
 	}
 
 	// リダイレクトURIチェック
-	if token.RedirectUri != ruri {
-		middleware.ResError(res, a_err.NewRequestErr("認可エラー"))
+	if tokenSession.RedirectUri != ruri {
+		fmt.Printf("リダイレクトURIが不正です\n")
+		middleware.ResError(res, a_err.NewAuthErr("認可エラー"))
 		return
 	}
 
 	// TODO:アクセストークンをDBに保存
 
 	body := ResAccessToken{
-		AccessToken: token.AccessToken,
+		AccessToken: tokenSession.AccessToken,
 		Expire:      int(time.Now().Add(time.Hour * 1).Unix()),
 	}
 	ResOk(res, &body)
