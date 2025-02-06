@@ -1,17 +1,29 @@
 package controller
 
 import (
+	"encoding/gob"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/gorilla/sessions"
 )
 
 type AuthSession struct {
-	clientId    string
-	redirectUri string
-	scope       string
-	state       string
+	ClientId    string
+	RedirectUri string
+	Scope       string
+	State       string
+}
+
+type ResAuth struct {
+	Status string `json:"status"`
+}
+
+func init() {
+	// gobパッケージに構造体を登録
+	gob.Register(AuthSession{})
 }
 
 /**
@@ -24,7 +36,7 @@ func GetPermission(res http.ResponseWriter, req *http.Request) {
 	}
 	queryParams := req.URL.Query()
 	rtype := queryParams.Get("response_type") //必須 固定値:"code"
-	cid := queryParams.Get("crient_id")       //必須 リクエスト元のクライアントID
+	cid := queryParams.Get("client_id")       //必須 リクエスト元のクライアントID
 	ruri := queryParams.Get("redirect_uri")   //必須　認可サーバはこのURIが登録されている
 	scope := queryParams.Get("scope")         //任意　リソースへのアクセス範囲
 	state := queryParams.Get("state")         //任意　CSRF対策
@@ -57,14 +69,20 @@ func GetPermission(res http.ResponseWriter, req *http.Request) {
 	// セッションID発行
 	sessionId := uuid.New().String()
 	session, _ := Store.Get(req, "session")
+
 	// 認可情報をセッションに保存
 	session.Values[sessionId] = AuthSession{
-		clientId:    cid,
-		redirectUri: ruri,
-		scope:       scope,
-		state:       state,
+		ClientId:    cid,
+		RedirectUri: ruri,
+		Scope:       scope,
+		State:       state,
 	}
+	session.Options = &sessions.Options{
+		MaxAge: int((30 * time.Minute).Seconds()), // 30分の有効期限
+	}
+	session.Save(req, res)
 	res.Header().Set("sesid", sessionId)
-	// UIを返却（ログイン画面）
-	http.FileServer(http.Dir("./build")).ServeHTTP(res, req)
+
+	body := ResAuth{Status: "OK"}
+	ResOk(res, &body)
 }

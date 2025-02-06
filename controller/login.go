@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"go-auth-bl/def"
 	"go-auth-bl/dto"
 	apiif "go-auth-bl/dto/if"
@@ -20,6 +21,19 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		return
 	}
+
+	sessionId := req.Header.Get("Session-Id")
+	fmt.Printf("sessionId: %s\n", sessionId)
+	session, _ := Store.Get(req, "session")
+
+	if val, ok := session.Values[sessionId]; ok {
+		authSession := val.(AuthSession)
+		fmt.Printf("ClientId: %s, RedirectUri: %s, Scope: %s, State: %s\n",
+			authSession.ClientId, authSession.RedirectUri, authSession.Scope, authSession.State)
+	} else {
+		fmt.Printf("セッションが存在しません\n")
+	}
+
 	userAuth, err := getUserAuth(reqBody.UsrId)
 	if err != nil {
 		middleware.ResError(res, err)

@@ -36,13 +36,15 @@ func root(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("sesid", "session-id-1234-5678-9000")
 	w.Header().Set("sesid", "session-id-1234-5678-9000")
 
-	if r.URL.Path != "/" {
-		// 静的ファイルを返す
-		http.FileServer(http.Dir("./build")).ServeHTTP(w, r)
-		return
-	}
+	http.FileServer(http.Dir("./build")).ServeHTTP(w, r)
+	return
+	// if r.URL.Path != "/" {
+	// 		// 静的ファイルを返す
+	// 		http.FileServer(http.Dir("./build")).ServeHTTP(w, r)
+	// 		return
+	// 	}
 
-	con.GetPermission(w, r)
+	// 	con.GetPermission(w, r)
 }
 
 func ApiWrapper(
