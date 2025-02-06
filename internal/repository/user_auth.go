@@ -7,8 +7,8 @@ package repository
 import (
 	"database/sql"
 	"fmt"
-	"go-auth-bl/dto"
-	a_err "go-auth-bl/error"
+	"go-auth-bl/internal/dto"
+	a_err "go-auth-bl/pkg/error"
 	"time"
 )
 

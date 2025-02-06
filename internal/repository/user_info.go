@@ -3,7 +3,7 @@ package repository
 import (
 	"database/sql"
 	"fmt"
-	"go-auth-bl/dto"
+	"go-auth-bl/internal/dto"
 	"log"
 )
 

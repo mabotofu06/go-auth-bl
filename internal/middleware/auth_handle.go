@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"fmt"
-	a_err "go-auth-bl/error"
+	a_err "go-auth-bl/pkg/error"
 	"net/http"
 	"strings"
 )

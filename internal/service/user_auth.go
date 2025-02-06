@@ -2,9 +2,9 @@ package service
 
 import (
 	"fmt"
-	cmn "go-auth-bl/common"
-	"go-auth-bl/dto"
-	"go-auth-bl/repository"
+	"go-auth-bl/internal/dto"
+	"go-auth-bl/internal/repository"
+	cmn "go-auth-bl/pkg/common"
 
 	"golang.org/x/crypto/bcrypt"
 )

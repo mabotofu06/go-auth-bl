@@ -3,8 +3,8 @@ package middleware
 import (
 	"encoding/json"
 	"fmt"
-	apiif "go-auth-bl/dto/if"
-	a_err "go-auth-bl/error"
+	apiif "go-auth-bl/internal/dto/if"
+	a_err "go-auth-bl/pkg/error"
 	"log"
 	"net/http"
 )

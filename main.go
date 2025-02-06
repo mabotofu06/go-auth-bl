@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	con "go-auth-bl/controller"
+	con "go-auth-bl/internal/controller"
 	"net/http"
 )
 

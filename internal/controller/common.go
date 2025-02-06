@@ -3,9 +3,9 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
-	apiif "go-auth-bl/dto/if"
-	a_err "go-auth-bl/error"
-	"go-auth-bl/middleware"
+	apiif "go-auth-bl/internal/dto/if"
+	"go-auth-bl/internal/middleware"
+	a_err "go-auth-bl/pkg/error"
 	"net/http"
 	"os"
 

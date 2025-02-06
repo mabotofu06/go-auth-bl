@@ -66,10 +66,9 @@ func GetPermission(res http.ResponseWriter, req *http.Request) {
 	// Basic認証
 	req.Header.Get("Authorization")
 
+	session, _ := Store.Get(req, "session")
 	// セッションID発行
 	sessionId := uuid.New().String()
-	session, _ := Store.Get(req, "session")
-
 	// 認可情報をセッションに保存
 	session.Values[sessionId] = AuthSession{
 		ClientId:    cid,

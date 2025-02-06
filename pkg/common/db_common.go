@@ -3,7 +3,7 @@ package common_db
 import (
 	"database/sql"
 	"fmt"
-	a_err "go-auth-bl/error"
+	a_err "go-auth-bl/pkg/error"
 	"os"
 
 	_ "github.com/lib/pq"

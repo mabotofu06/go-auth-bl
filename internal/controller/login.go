@@ -2,15 +2,24 @@ package controller
 
 import (
 	"fmt"
-	"go-auth-bl/def"
-	"go-auth-bl/dto"
-	apiif "go-auth-bl/dto/if"
-	a_err "go-auth-bl/error"
-	"go-auth-bl/middleware"
-	"go-auth-bl/service"
+	"go-auth-bl/internal/def"
+	"go-auth-bl/internal/dto"
+	apiif "go-auth-bl/internal/dto/if"
+	"go-auth-bl/internal/middleware"
+	"go-auth-bl/internal/service"
+	a_err "go-auth-bl/pkg/error"
 	"net/http"
 	"os"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/gorilla/sessions"
 )
+
+type TokenSession struct {
+	AccessToken string
+	RedirectUri string
+}
 
 // ログインAPI
 func PostLogin(res http.ResponseWriter, req *http.Request) {
@@ -26,8 +35,10 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("sessionId: %s\n", sessionId)
 	session, _ := Store.Get(req, "session")
 
+	authSession := AuthSession{}
+
 	if val, ok := session.Values[sessionId]; ok {
-		authSession := val.(AuthSession)
+		authSession = val.(AuthSession)
 		fmt.Printf("ClientId: %s, RedirectUri: %s, Scope: %s, State: %s\n",
 			authSession.ClientId, authSession.RedirectUri, authSession.Scope, authSession.State)
 	} else {
@@ -43,6 +54,19 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 		middleware.ResError(res, err)
 		return
 	}
+
+	//認可コードとアクセストークンを発行
+	code := uuid.New().String()
+	accessToken := uuid.New().String()
+	//認可コードでセッションに保存
+	session.Values[code] = TokenSession{
+		AccessToken: accessToken,
+		RedirectUri: authSession.RedirectUri,
+	}
+	session.Options = &sessions.Options{
+		MaxAge: int((30 * time.Second).Seconds()), // 認可コードは30秒の有効期限
+	}
+	session.Save(req, res)
 
 	// レスポンスを返す
 	data := apiif.ResLogin{
