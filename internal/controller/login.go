@@ -59,8 +59,11 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	res.Header().Set("Access-Control-Allow-Origin", "*")
+	res.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	res.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 	// レスポンスを返す
-	http.Redirect(res, req, "/api/v1/access_token"+"?code="+code, http.StatusFound)
+	http.Redirect(res, req, "http://localhost:3000"+"?code="+code, http.StatusFound)
 	// data := apiif.ResLogin{
 	// 	UsrId:   userAuth.UserId,
 	// 	Session: "dummy_session",
