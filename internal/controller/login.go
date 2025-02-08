@@ -15,6 +15,11 @@ import (
 	"github.com/google/uuid"
 )
 
+type ResLogin struct {
+	Code        string `json:"code"`
+	RedirectUri string `json:"redirectUri"`
+}
+
 // ログインAPI
 func PostLogin(res http.ResponseWriter, req *http.Request) {
 	if err := ReqMethodCheck(res, req, POST); err != nil {
@@ -62,8 +67,17 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Access-Control-Allow-Origin", "*")
 	res.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	res.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-	// レスポンスを返す
-	http.Redirect(res, req, "http://localhost:3000"+"?code="+code, http.StatusFound)
+
+	data := ResLogin{
+		Code:        code,
+		RedirectUri: "http://localhost:8080", //authSession.RedirectUri,
+	}
+
+	ResOk[ResLogin](res, &data)
+
+	//res.Header().Set("Location", "/api/v1/redirect"+"?code="+code+"&redirect_uri="+"http://localhost:8080")
+	//res.WriteHeader(http.StatusFound) // レスポンスを返す
+	//http.Redirect(res, req, "http://localhost:8080"+"?code="+code, http.StatusFound)
 	// data := apiif.ResLogin{
 	// 	UsrId:   userAuth.UserId,
 	// 	Session: "dummy_session",
