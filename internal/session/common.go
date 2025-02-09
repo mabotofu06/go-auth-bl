@@ -50,6 +50,9 @@ func GetValue[T any](key string, r *http.Request) (*T, *a_err.CustomError) {
 		fmt.Printf("認証セッションの型が一致しません: %v\n", val)
 		return nil, a_err.NewAuthErr("認証エラー")
 	}
+
+	fmt.Printf("認証セッションから値を取得しました key: %s value: %v\n", key, value)
+
 	return &value, nil
 }
 
@@ -77,6 +80,6 @@ func SetValue[T any](w http.ResponseWriter, r *http.Request, key string, value T
 		fmt.Printf("認証セッションの保存にエラーが発生しました: %v\n", err)
 		return a_err.NewServerErr("セッション保存エラー")
 	}
-	fmt.Printf("認証セッションに値を設定しました: %v\n", value)
+	fmt.Printf("認証セッションに値を設定しました key: %s value: %v\n", key, value)
 	return nil
 }
