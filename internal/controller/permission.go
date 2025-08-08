@@ -41,7 +41,7 @@ func GetPermission(res http.ResponseWriter, req *http.Request) {
 	// }
 	//TODO: クライアントIDチェック
 	//clientInfo, err := service.GetClientInfo(cid)
-	//TODO: リダイレクトURIチェック
+	//TODO: リダイレクトURIチェック（DBに登録されたリダイレクト先か判定）
 
 	// セッションID発行
 	sessionId := uuid.New().String()

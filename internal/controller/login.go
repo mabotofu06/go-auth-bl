@@ -70,7 +70,7 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 
 	data := ResLogin{
 		Code:        code,
-		RedirectUri: "http://localhost:8080", //authSession.RedirectUri,
+		RedirectUri: "http://localhost:8080", //TODO:遷移先をDB管理と併せて連携できるようにする　authSession.RedirectUri,
 	}
 
 	ResOk[ResLogin](res, &data)
