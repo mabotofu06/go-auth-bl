@@ -3,7 +3,9 @@ package controller
 import (
 	"fmt"
 	"go-auth-bl/internal/middleware"
+	"go-auth-bl/internal/service"
 	"go-auth-bl/internal/session"
+	a_err "go-auth-bl/pkg/error"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -34,14 +36,15 @@ func GetPermission(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("scope=%s\n", scope)
 	fmt.Printf("state=%s\n", state)
 
-	// TODO:パラメータチェック
-	// if rtype != "code" || cid == "" || ruri == "" {
-	// 	middleware.ResError(res, a_err.NewRequestErr("パラメータが不適切です"))
-	// 	return
-	// }
-	//TODO: クライアントIDチェック
-	//clientInfo, err := service.GetClientInfo(cid)
-	//TODO: リダイレクトURIチェック（DBに登録されたリダイレクト先か判定）
+	if rtype != "code" || cid == "" || ruri == "" {
+		middleware.ResError(res, a_err.NewRequestErr("パラメータが不適切です"))
+		return
+	}
+	//クライアントID, リダイレクトURIチェック
+	if err := service.IsEnableClient(cid, ruri); err != nil {
+		middleware.ResError(res, a_err.NewAuthErr("無効な認証情報です"))
+		return
+	}
 
 	// セッションID発行
 	sessionId := uuid.New().String()

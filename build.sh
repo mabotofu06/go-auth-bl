@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Docker Composeサービスを停止・削除
+docker-compose down
+# ボリュームも含めて完全削除
+docker-compose down -v
+
 cd ./db
 sh build.sh
 cd ..

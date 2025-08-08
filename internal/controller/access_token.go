@@ -32,10 +32,10 @@ func GetAccessToken(res http.ResponseWriter, req *http.Request) {
 	fmt.Printf("state=%s\n", state)
 
 	// パラメータチェック
-	// if code != "" || ruri == "" {
-	// 	middleware.ResError(res, a_err.NewRequestErr("パラメータが不適切です"))
-	// 	return
-	// }
+	if code == "" || ruri == "" {
+		middleware.ResError(res, a_err.NewRequestErr("パラメータが不適切です"))
+		return
+	}
 
 	// ログインAPIで設定したTokenセッション取得
 	tokenSession, err := session.GetValue[session.TokenInfo](code, req)
