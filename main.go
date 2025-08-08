@@ -19,6 +19,8 @@ func main() {
 	http.HandleFunc("/api/v1/login", ApiWrapper(con.PostLogin))
 	//アクセストークン要求API
 	http.HandleFunc("/api/v1/access_token", ApiWrapper(con.GetAccessToken))
+	//トークン検証API
+	http.HandleFunc("/api/v1/valid_token", ApiWrapper(con.GetValidToken))
 
 	//http://localhost/ にアクセスすると画面が返却
 	http.HandleFunc("/", ApiWrapper(root))

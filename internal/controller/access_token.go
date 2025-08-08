@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"go-auth-bl/cache"
 	"go-auth-bl/internal/middleware"
 	"go-auth-bl/internal/session"
 	a_err "go-auth-bl/pkg/error"
@@ -14,18 +15,28 @@ type ResAccessToken struct {
 	Expire      int    `json:"expire"`
 }
 
+type ReqAccessToken struct {
+	Code        string `json:"code"`
+	RedirectUri string `json:"redirect_uri"`
+	State       string `json:"state"`
+}
+
 /**
 * @param w http.ResponseWriter
 * @param r *http.Request
  */
 func GetAccessToken(res http.ResponseWriter, req *http.Request) {
-	if ReqMethodCheck(res, req, GET) != nil {
+	if ReqMethodCheck(res, req, POST) != nil {
 		return
 	}
-	queryParams := req.URL.Query()
-	code := queryParams.Get("code")         //必須
-	ruri := queryParams.Get("redirect_uri") //必須　認可サーバはこのURIが登録されている
-	state := queryParams.Get("state")       //任意　CSRF対策
+	reqBody, err := GetReqBody[ReqAccessToken](res, req)
+	if err != nil {
+		return
+	}
+
+	code := reqBody.Code        //必須
+	ruri := reqBody.RedirectUri //必須
+	state := reqBody.State      //任意
 
 	fmt.Printf("code=%s\n", code)
 	fmt.Printf("ruri=%s\n", ruri)
@@ -52,7 +63,19 @@ func GetAccessToken(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// TODO:アクセストークンをDBに保存
+	// キャッシュ初期化 TODO:アクセストークンを取得、設定する処理を共通化して操作しやすくする
+	_, e := cache.SetupCache()
+	if e != nil {
+		fmt.Printf("キャッシュ初期化エラー: %v\n", e)
+		middleware.ResError(res, a_err.NewServerErr("内部エラー"))
+		return
+	}
+
+	// アクセストークンをキャッシュに保存（1時間のTTL）
+	ttl := time.Hour * 1
+	cache.SetCache(tokenSession.AccessToken, tokenSession, int64(1), ttl)
+
+	fmt.Printf("アクセストークンをキャッシュに保存しました: %s\n", tokenSession.AccessToken)
 
 	body := ResAccessToken{
 		AccessToken: tokenSession.AccessToken,
