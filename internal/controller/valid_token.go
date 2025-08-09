@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-auth-bl/cache"
 	"go-auth-bl/internal/middleware"
+	"go-auth-bl/internal/session"
 	a_err "go-auth-bl/pkg/error"
 	"net/http"
 )
@@ -21,7 +22,7 @@ func GetValidToken(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	queryParams := req.URL.Query()
-	tkn := queryParams.Get("token") //必須 固定値:"token"
+	tkn := queryParams.Get("token") //必須
 
 	fmt.Printf("token=%s\n", tkn)
 
@@ -30,8 +31,8 @@ func GetValidToken(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	tokenInfo, err := cache.GetTokenFromCache(tkn)
-	if err != nil {
+	tokenInfo, ok := cache.GetCache[session.TokenInfo](tkn, false)
+	if !ok {
 		middleware.ResError(res, a_err.NewAuthErr("無効なトークンです"))
 		return
 	}

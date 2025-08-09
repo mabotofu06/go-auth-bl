@@ -2,11 +2,13 @@ package controller
 
 import (
 	"fmt"
+	"go-auth-bl/cache"
 	"go-auth-bl/internal/middleware"
 	"go-auth-bl/internal/service"
 	"go-auth-bl/internal/session"
 	a_err "go-auth-bl/pkg/error"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -48,18 +50,27 @@ func GetPermission(res http.ResponseWriter, req *http.Request) {
 
 	// セッションID発行
 	sessionId := uuid.New().String()
+	http.SetCookie(res, &http.Cookie{
+		Name:     "sesid",
+		Value:    sessionId,
+		Path:     "/",
+		MaxAge:   30 * 60,
+		HttpOnly: true,  //JSからのアクセスを防止（フロント側ではそのまま返却するよう設定）
+		Secure:   false, // 開発HTTPなら false に
+		SameSite: http.SameSiteLaxMode,
+	})
+	// 認可情報をセッションに保存(有効期限30分)
 	permission := session.PermissionInfo{
 		ClientId:    cid,
 		RedirectUri: ruri,
 		Scope:       scope,
 		State:       state,
 	}
-	// 認可情報をセッションに保存(有効期限30分)
-	if err := session.SetValue[session.PermissionInfo](res, req, sessionId, permission, 30*60); err != nil {
-		middleware.ResError(res, err)
+
+	if err := cache.SetCache[session.PermissionInfo](sessionId, permission, int64(5), 30*time.Minute); err != nil {
+		middleware.ResError(res, a_err.NewAuthErr("セッション保存エラー"))
 		return
 	}
-	res.Header().Set("sesid", sessionId)
 
 	body := ResAuth{Status: "OK"}
 	ResOk(res, &body)

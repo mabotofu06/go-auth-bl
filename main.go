@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"go-auth-bl/cache"
 	con "go-auth-bl/internal/controller"
 	"net/http"
 )
@@ -10,6 +11,11 @@ func main() {
 	server := http.Server{
 		Addr:    ":8080",
 		Handler: http.DefaultServeMux,
+	}
+
+	if err := cache.Init(); err != nil {
+		fmt.Printf("キャッシュ初期化エラー: %v\n", err)
+		return
 	}
 
 	//認可コード要求API
@@ -21,14 +27,15 @@ func main() {
 	http.HandleFunc("/api/v1/access_token", ApiWrapper(con.GetAccessToken))
 	//トークン検証API
 	http.HandleFunc("/api/v1/valid_token", ApiWrapper(con.GetValidToken))
+	//トークン削除API
+	http.HandleFunc("/api/v1/token/delete", ApiWrapper(con.DeleteToken))
 
 	//http://localhost/ にアクセスすると画面が返却
 	http.HandleFunc("/", ApiWrapper(root))
 
 	fmt.Println("Starting server at port 8080")
 
-	err := server.ListenAndServe()
-	if err != nil {
+	if err := server.ListenAndServe(); err != nil {
 		fmt.Println("Error starting server:", err)
 	}
 }

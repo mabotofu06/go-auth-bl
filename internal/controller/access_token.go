@@ -49,8 +49,8 @@ func GetAccessToken(res http.ResponseWriter, req *http.Request) {
 	}
 
 	// ログインAPIで設定したTokenセッション取得
-	tokenSession, err := session.GetValue[session.TokenInfo](code, req)
-	if err != nil {
+	tokenSession, ok := cache.GetCache[session.TokenInfo](code, true)
+	if !ok {
 		fmt.Printf("セッションが存在しません\n")
 		middleware.ResError(res, a_err.NewAuthErr("認可エラー"))
 		return
@@ -63,17 +63,9 @@ func GetAccessToken(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// キャッシュ初期化 TODO:アクセストークンを取得、設定する処理を共通化して操作しやすくする
-	_, e := cache.SetupCache()
-	if e != nil {
-		fmt.Printf("キャッシュ初期化エラー: %v\n", e)
-		middleware.ResError(res, a_err.NewServerErr("内部エラー"))
-		return
-	}
-
 	// アクセストークンをキャッシュに保存（1時間のTTL）
 	ttl := time.Hour * 1
-	cache.SetCache(tokenSession.AccessToken, tokenSession, int64(1), ttl)
+	cache.SetCache[session.TokenInfo](tokenSession.AccessToken, tokenSession, int64(1), ttl)
 
 	fmt.Printf("アクセストークンをキャッシュに保存しました: %s\n", tokenSession.AccessToken)
 

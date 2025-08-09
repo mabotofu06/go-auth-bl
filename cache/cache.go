@@ -2,91 +2,84 @@ package cache
 
 import (
 	"errors"
-	"go-auth-bl/internal/session"
-	"sync"
+	"fmt"
 	"time"
 
 	"github.com/dgraph-io/ristretto"
 )
 
-var (
-	cacheInstance *ristretto.Cache[string, any]
-	once          sync.Once
-	initError     error
-)
+// cache はシングルトンでキャッシュインスタンスを保持
+// アクセッサメソッドを通してアクセスする
+var cache *ristretto.Cache[string, any]
+var initNum = 0
 
-// GetCacheInstance はシングルトンでキャッシュインスタンスを取得します
-func GetCacheInstance() (*ristretto.Cache[string, any], error) {
-	once.Do(func() {
-		cache, err := ristretto.NewCache(&ristretto.Config[string, any]{
-			NumCounters: 1e7,     // 約1000万個のカウンター
-			MaxCost:     1 << 30, // 1GBのキャッシュ
-			BufferItems: 64,      // バッファのサイズ
-		})
-
-		if err != nil {
-			initError = err
-			return
-		}
-
-		cacheInstance = cache
-	})
-
-	if initError != nil {
-		return nil, initError
+func Init() error {
+	if initNum > 0 {
+		fmt.Println("キャッシュは初期化済です.")
+		return nil
 	}
-
-	return cacheInstance, nil
+	var err error
+	cache, err = ristretto.NewCache(&ristretto.Config[string, any]{
+		NumCounters: 1e7,     // 約1000万個のカウンター
+		MaxCost:     1 << 30, // 1GBのキャッシュ
+		BufferItems: 64,      // バッファのサイズ(基本64で十分)
+	})
+	if err != nil {
+		initNum = 0
+		return err
+	}
+	initNum++
+	fmt.Println("キャッシュが初期化されました.")
+	return nil
 }
 
-// 以下は後方互換性のために残す（非推奨）
-func SetupCache() (*ristretto.Cache[string, any], error) {
-	return GetCacheInstance()
+func checkCacheInitialized() error {
+	if initNum <= 0 || cache == nil {
+		return errors.New("キャッシュが初期化されていません")
+	}
+	return nil
 }
 
 // Setはキャッシュに値を設定します
-func SetCache(key string, value any, cost int64, ttl time.Duration) error {
-	cache, err := GetCacheInstance()
-	if err != nil {
+func SetCache[T any](key string, value T, cost int64, ttl time.Duration) error {
+	if err := checkCacheInitialized(); err != nil {
 		return err
 	}
-
+	fmt.Printf("キャッシュに設定しました: %s\n", key)
 	cache.SetWithTTL(key, value, cost, ttl)
-	time.Sleep(10 * time.Millisecond) // 確実に設定されるまで待つ
+	cache.Wait() // キャッシュの設定が完了するまで待つ
 	return nil
 }
 
 // Getはキャッシュから値を取得します
-func GetCache(key string) (any, bool) {
-	cache, err := GetCacheInstance()
-	if err != nil {
-		return nil, false
+func GetCache[T any](key string, deleteFlag bool) (T, bool) {
+	var zero T
+	if err := checkCacheInitialized(); err != nil {
+		fmt.Println("キャッシュが初期化されていません:", err)
+		return zero, false
 	}
 
-	return cache.Get(key)
+	value, found := cache.Get(key)
+	if !found {
+		return zero, false
+	}
+
+	v, ok := value.(T)
+	if !ok {
+		return zero, false
+	}
+	if deleteFlag {
+		DeleteCache(key) // deleteFlagがtrueならキャッシュから削除
+	}
+	return v, true
 }
 
 // Delはキャッシュから値を削除します
 func DeleteCache(key string) error {
-	cache, err := GetCacheInstance()
-	if err != nil {
+	if err := checkCacheInitialized(); err != nil {
 		return err
 	}
-
 	cache.Del(key)
+	fmt.Printf("キャッシュから削除しました: %s\n", key)
 	return nil
-}
-
-// アクセストークンでセッション情報を取得
-func GetTokenFromCache(accessToken string) (*session.TokenInfo, error) {
-	value, found := GetCache(accessToken)
-	if !found {
-		return nil, errors.New("token not found")
-	}
-
-	tokenInfo, ok := value.(*session.TokenInfo)
-	if !ok {
-		return nil, errors.New("invalid token")
-	}
-	return tokenInfo, nil
 }

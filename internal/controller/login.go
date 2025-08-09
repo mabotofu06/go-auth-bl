@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"go-auth-bl/cache"
 	"go-auth-bl/internal/def"
 	"go-auth-bl/internal/dto"
 	apiif "go-auth-bl/internal/dto/if"
@@ -11,6 +12,7 @@ import (
 	a_err "go-auth-bl/pkg/error"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -25,17 +27,24 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 	if err := ReqMethodCheck(res, req, POST); err != nil {
 		return
 	}
+
 	reqBody, err := GetReqBody[apiif.ReqLogin](res, req)
 	if err != nil {
 		return
 	}
-
-	sessionId := req.Header.Get("Session-Id")
+	// CookieからセッションIDを取得
+	cookie, e := req.Cookie("sesid")
+	if e != nil {
+		fmt.Printf("セッションID取得に失敗しました\n")
+		middleware.ResError(res, a_err.NewAuthErr("認可エラー"))
+		return
+	}
+	sessionId := cookie.Value
 	fmt.Printf("sessionId: %s\n", sessionId)
 
-	authSession, err := session.GetValue[session.PermissionInfo](sessionId, req)
+	authSession, ok := cache.GetCache[session.PermissionInfo](sessionId, true)
 
-	if err != nil {
+	if !ok {
 		fmt.Printf("セッションが存在しません\n")
 		middleware.ResError(res, a_err.NewAuthErr("認可エラー"))
 		return
@@ -54,13 +63,12 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 
 	//認可コードとアクセストークンを発行
 	code := uuid.New().String()
-	accessToken := uuid.New().String()
 	tokenSession := session.TokenInfo{
-		AccessToken: accessToken,
+		AccessToken: uuid.New().String(),
 		RedirectUri: authSession.RedirectUri,
 	}
-	if err := session.SetValue[session.TokenInfo](res, req, code, tokenSession, 30); err != nil {
-		middleware.ResError(res, err)
+	if err := cache.SetCache[session.TokenInfo](code, tokenSession, int64(2), 30*time.Minute); err != nil {
+		middleware.ResError(res, a_err.NewAuthErr("認可エラー"))
 		return
 	}
 
