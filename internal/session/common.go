@@ -7,9 +7,18 @@ type PermissionInfo struct {
 	State       string
 }
 
-type TokenInfo struct {
+type CodeInfo struct {
 	AccessToken string
+	UserId      string
+	ClientId    string
+	Scope       string
 	RedirectUri string
+}
+
+type TokenInfo struct {
+	UserId   string
+	Scope    string
+	ClientId string
 }
 
 // var Session = sessions.NewCookieStore([]byte("go-auth-session"))

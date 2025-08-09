@@ -3,8 +3,10 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	"go-auth-bl/cache"
 	apiif "go-auth-bl/internal/dto/if"
 	"go-auth-bl/internal/middleware"
+	"go-auth-bl/internal/session"
 	a_err "go-auth-bl/pkg/error"
 	"net/http"
 	"os"
@@ -97,4 +99,47 @@ func EncodePassword(password string) (string, error) {
 	encodedPassword := string(hashedPassword)
 	// fmt.Println("Encoded password:", encodedPassword)
 	return encodedPassword, nil
+}
+
+// ヘッダーのトークンと認証情報をチェック
+func CheckHeader(res http.ResponseWriter, req *http.Request) *a_err.CustomError {
+	auth := req.Header.Get("authorization")
+	tkn := req.Header.Get("token")
+
+	// tknのチェックをスキップするエンドポイントを定義
+	skipEndpoints := []string{
+		"/api/v1/permission",
+		"/api/v1/login",
+		"/api/v1/token/create",
+	}
+
+	if !contains(skipEndpoints, req.URL.Path) {
+		fmt.Printf("トークンチェック対象外のためスキップします. エンドポイント: %s\n", req.URL.Path)
+		return nil
+	}
+
+	tokenInfo, ok := cache.GetCache[session.TokenInfo](tkn, false)
+	if !ok {
+		err := a_err.NewRequestErr("トークンが不正です")
+		fmt.Println("トークンが不正です")
+		return err
+	}
+	//クライアントIDをもとにauthorizationが想定通りの設定内容かチェック
+	if auth != fmt.Sprintf("Bearer %s", tokenInfo.ClientId) {
+		err := a_err.NewRequestErr("認証情報が不正です")
+		fmt.Println("認証情報が不正です")
+		return err
+	}
+
+	return nil
+}
+
+// contains checks if a string is present in a slice of strings
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
 }

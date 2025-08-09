@@ -67,6 +67,7 @@ func GetPermission(res http.ResponseWriter, req *http.Request) {
 		State:       state,
 	}
 
+	//ログイン情報入力して送信まで30分有効期限を設ける
 	if err := cache.SetCache[session.PermissionInfo](sessionId, permission, int64(5), 30*time.Minute); err != nil {
 		middleware.ResError(res, a_err.NewAuthErr("セッション保存エラー"))
 		return

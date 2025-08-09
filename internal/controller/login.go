@@ -42,14 +42,14 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 	sessionId := cookie.Value
 	fmt.Printf("sessionId: %s\n", sessionId)
 
-	authSession, ok := cache.GetCache[session.PermissionInfo](sessionId, true)
+	permissionInfo, ok := cache.GetCache[session.PermissionInfo](sessionId, true)
 
 	if !ok {
 		fmt.Printf("セッションが存在しません\n")
 		middleware.ResError(res, a_err.NewAuthErr("認可エラー"))
 		return
 	}
-	fmt.Printf("authSession: %+v\n", authSession)
+	fmt.Printf("permissionInfo: %+v\n", permissionInfo)
 
 	userAuth, err := getUserAuth(reqBody.UsrId)
 	if err != nil {
@@ -61,13 +61,17 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//認可コードとアクセストークンを発行
+	//認可コード, スコープ, アクセストークンを発行
 	code := uuid.New().String()
-	tokenSession := session.TokenInfo{
+	tokenSession := session.CodeInfo{
 		AccessToken: uuid.New().String(),
-		RedirectUri: authSession.RedirectUri,
+		ClientId:    permissionInfo.ClientId,
+		UserId:      userAuth.UserId,
+		Scope:       permissionInfo.Scope,
+		RedirectUri: permissionInfo.RedirectUri,
 	}
-	if err := cache.SetCache[session.TokenInfo](code, tokenSession, int64(2), 30*time.Minute); err != nil {
+	//アクセストークン要求まで30秒以内に完了される想定でセッションに保存
+	if err := cache.SetCache[session.CodeInfo](code, tokenSession, int64(2), 30*time.Second); err != nil {
 		middleware.ResError(res, a_err.NewAuthErr("認可エラー"))
 		return
 	}
@@ -78,7 +82,7 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 
 	data := ResLogin{
 		Code:        code,
-		RedirectUri: authSession.RedirectUri,
+		RedirectUri: permissionInfo.RedirectUri,
 	}
 
 	ResOk[ResLogin](res, &data)

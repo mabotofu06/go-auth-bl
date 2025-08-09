@@ -26,17 +26,11 @@ func GetValidToken(res http.ResponseWriter, req *http.Request) {
 
 	fmt.Printf("token=%s\n", tkn)
 
-	if tkn == "" {
-		middleware.ResError(res, a_err.NewRequestErr("パラメータが不適切です"))
-		return
-	}
-
-	tokenInfo, ok := cache.GetCache[session.TokenInfo](tkn, false)
-	if !ok {
+	if _, ok := cache.GetCache[session.TokenInfo](tkn, false); !ok {
 		middleware.ResError(res, a_err.NewAuthErr("無効なトークンです"))
 		return
 	}
 
-	body := ResToken{Token: tokenInfo.AccessToken}
+	body := ResToken{Token: tkn}
 	ResOk(res, &body)
 }

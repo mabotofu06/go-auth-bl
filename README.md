@@ -26,7 +26,32 @@ OAuth2.0 Authrization Code Grant(認可コードグラント)の要件で作成�
 
 1. 
 
+# Go-Authでの要件
++ Goを使ってバックエンドと認証周りの勉強（開発者個人の学習向け）
++ 今後、別システムの認証としても使えるように接続先システムを管理できるようにする
++ セキュリティについてはしっかりと考えて、可能な範囲(無料ツールでの診断を活用するなど)で脆弱性を無くす
+
+
 # Go-Authで提供されるAPI
+### 一覧
+25/8月時点  prototype版
+
+ID |論理名 |エンドポイント |HTTPメソッド
+---|------|--------------|------------
+GAAPI00000|認可ID要求API                |/api/v1/permission   |GET
+GAAPI00001|ログインAPI                  |/api/v1/login        |POST
+---|---|---|---|
+GAAPI10000|アクセストークン要求API       |/api/v1/token/create |POST
+GAPI100001|アクセストークン有効チェックAPI|/api/v1/token/check  |GET
+GAAPI10002|アクセストークン削除API       |/api/v1/token/delete |DELETE
+---|---|---|---|
+GAAPI20000|ユーザ登録API                |/api/v1/user/create  |POST
+GAAPI20001|ユーザ情報照会API            |/api/v1/user/inquiry |GET
+
+
++ ユーザ情報更新API
++ ユーザ削除API
+
 
 * ### 認可ID要求
 go-auth内で「アクセストークン発行」の際に用いる認可IDを発行する\

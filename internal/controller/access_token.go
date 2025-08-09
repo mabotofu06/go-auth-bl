@@ -12,6 +12,7 @@ import (
 
 type ResAccessToken struct {
 	AccessToken string `json:"access_token"`
+	UserId      string `json:"user_id"`
 	Expire      int    `json:"expire"`
 }
 
@@ -49,7 +50,7 @@ func GetAccessToken(res http.ResponseWriter, req *http.Request) {
 	}
 
 	// ログインAPIで設定したTokenセッション取得
-	tokenSession, ok := cache.GetCache[session.TokenInfo](code, true)
+	tokenSession, ok := cache.GetCache[session.CodeInfo](code, true)
 	if !ok {
 		fmt.Printf("セッションが存在しません\n")
 		middleware.ResError(res, a_err.NewAuthErr("認可エラー"))
@@ -63,14 +64,20 @@ func GetAccessToken(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// アクセストークンをキャッシュに保存（1時間のTTL）
+	// アクセストークンをキャッシュに保存（1時間の期限）
 	ttl := time.Hour * 1
-	cache.SetCache[session.TokenInfo](tokenSession.AccessToken, tokenSession, int64(1), ttl)
+	tokenInfo := session.TokenInfo{
+		ClientId: tokenSession.ClientId,
+		UserId:   tokenSession.UserId,
+		Scope:    tokenSession.Scope,
+	}
+	cache.SetCache[session.TokenInfo](tokenSession.AccessToken, tokenInfo, int64(1), ttl)
 
 	fmt.Printf("アクセストークンをキャッシュに保存しました: %s\n", tokenSession.AccessToken)
 
 	body := ResAccessToken{
 		AccessToken: tokenSession.AccessToken,
+		UserId:      tokenSession.UserId,
 		Expire:      int(time.Now().Add(time.Hour * 1).Unix()),
 	}
 	ResOk(res, &body)
