@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"go-auth-bl/cache"
 	apiif "go-auth-bl/internal/dto/if"
-	"go-auth-bl/internal/middleware"
 	"go-auth-bl/internal/session"
 	a_err "go-auth-bl/pkg/error"
 	"net/http"
@@ -28,10 +27,7 @@ var Store = sessions.NewCookieStore([]byte("go-auth-session"))
 func ReqMethodCheck(res http.ResponseWriter, req *http.Request, method string) *a_err.CustomError {
 	if req.Method != method {
 		err := a_err.NewRequestErr("リクエストメソッドが不適切です")
-
 		fmt.Printf("リクエストメソッドが不適切です: %s\n", req.Method)
-		//FIXME:各処理でのResError処理は各controller内部で呼ばれるように修正
-		middleware.ResError(res, err)
 		return err
 	}
 	return nil
@@ -42,8 +38,6 @@ func GetReqBody[T any](res http.ResponseWriter, req *http.Request) (*T, *a_err.C
 	if req.Body == nil {
 		err := a_err.NewRequestErr("リクエストボディが空です")
 		fmt.Println("リクエストボディが空です")
-		//FIXME:各処理でのResError処理は各controller内部で呼ばれるように修正
-		middleware.ResError(res, err)
 		return nil, err
 	}
 
@@ -53,8 +47,6 @@ func GetReqBody[T any](res http.ResponseWriter, req *http.Request) (*T, *a_err.C
 	if err := json.NewDecoder(req.Body).Decode(&request); err != nil {
 		err := a_err.NewRequestErr("リクエストボディが不適切です")
 		fmt.Println("リクエストボディエンコード中にエラーが発生しました:", err)
-		//FIXME:各処理でのResError処理は各controller内部で呼ばれるように修正
-		middleware.ResError(res, err)
 		return nil, err
 	}
 
@@ -63,7 +55,7 @@ func GetReqBody[T any](res http.ResponseWriter, req *http.Request) (*T, *a_err.C
 }
 
 // APIの正常終了時のレスポンスを返す
-func ResOk[T any](res http.ResponseWriter, data *T) {
+func ResOk[T any](res http.ResponseWriter, data *T) *a_err.CustomError {
 	fmt.Printf("response data: %+v\n", data)
 
 	res.Header().Set("Content-Type", "application/json")
@@ -77,12 +69,11 @@ func ResOk[T any](res http.ResponseWriter, data *T) {
 
 	json, err := json.Marshal(resBody)
 	if err != nil {
-		//FIXME:各処理でのResError処理は各controller内部で呼ばれるように修正
-		middleware.ResError(res, a_err.NewServerErr("予期せぬエラーが発生しました"))
-		return
+		return a_err.NewServerErr("予期せぬエラーが発生しました")
 	}
 	res.WriteHeader(http.StatusOK)
 	res.Write(json)
+	return nil
 }
 
 // bcryptを使ってパスワードをハッシュ化

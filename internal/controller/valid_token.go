@@ -18,7 +18,8 @@ type ResToken struct {
 * @param r *http.Request
  */
 func GetValidToken(res http.ResponseWriter, req *http.Request) {
-	if ReqMethodCheck(res, req, GET) != nil {
+	if err := ReqMethodCheck(res, req, GET); err != nil {
+		middleware.ResError(res, err)
 		return
 	}
 	queryParams := req.URL.Query()
@@ -32,5 +33,8 @@ func GetValidToken(res http.ResponseWriter, req *http.Request) {
 	}
 
 	body := ResToken{Token: tkn}
-	ResOk(res, &body)
+	if err := ResOk[ResToken](res, &body); err != nil {
+		middleware.ResError(res, err)
+		return
+	}
 }

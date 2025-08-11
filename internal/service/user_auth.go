@@ -5,6 +5,8 @@ import (
 	"go-auth-bl/internal/dto"
 	"go-auth-bl/internal/repository"
 	cmn "go-auth-bl/pkg/common"
+	a_err "go-auth-bl/pkg/error"
+	"os"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -59,9 +61,29 @@ func ComparePassword(hashedPassword, password string) bool {
 	return err == nil
 }
 
-func AddUserAuth(userId string, password string) (*dto.UserAuth, error) {
+// 新規ログインユーザを作成
+func CreateNewLoginUser(userId string, userName string, password string) (*string, *a_err.CustomError) {
 	db := cmn.ConnectDB()
 	defer db.Close() // 関数終了時に接続を閉じる
 
-	return nil, nil
+	//登録済かチェック
+	exists, err := repository.UserExists(userId, db)
+	if err != nil {
+		return nil, a_err.NewServerErr(fmt.Sprintf("登録時エラー: %v", err))
+	}
+	if exists {
+		return nil, a_err.NewRequestErr("ユーザIDがすでに存在します")
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(os.Getenv("SALT")+password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, a_err.NewServerErr(fmt.Sprintf("登録時エラー: %v", err))
+	}
+
+	// 新規ユーザを作成
+	if err := repository.CreateUserWithInfo(db, userId, userName, string(hashedPassword)); err != nil {
+		return nil, a_err.NewServerErr(fmt.Sprintf("登録時エラー: %v", err))
+	}
+
+	return &userId, nil
 }

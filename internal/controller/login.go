@@ -25,11 +25,13 @@ type ResLogin struct {
 // ログインAPI
 func PostLogin(res http.ResponseWriter, req *http.Request) {
 	if err := ReqMethodCheck(res, req, POST); err != nil {
+		middleware.ResError(res, err)
 		return
 	}
 
 	reqBody, err := GetReqBody[apiif.ReqLogin](res, req)
 	if err != nil {
+		middleware.ResError(res, err)
 		return
 	}
 	// CookieからセッションIDを取得
@@ -42,7 +44,8 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 	sessionId := cookie.Value
 	fmt.Printf("sessionId: %s\n", sessionId)
 
-	permissionInfo, ok := cache.GetCache[session.PermissionInfo](sessionId, true)
+	//1回でもログインミスしたらセッションが無くなって認可エラーとなるため維持する（5回間違えればロックかかるため総攻撃では突破できない）
+	permissionInfo, ok := cache.GetCache[session.PermissionInfo](sessionId, false)
 
 	if !ok {
 		fmt.Printf("セッションが存在しません\n")
@@ -85,7 +88,10 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 		RedirectUri: permissionInfo.RedirectUri,
 	}
 
-	ResOk[ResLogin](res, &data)
+	if err := ResOk[ResLogin](res, &data); err != nil {
+		middleware.ResError(res, err)
+		return
+	}
 
 	//res.Header().Set("Location", "/api/v1/redirect"+"?code="+code+"&redirect_uri="+"http://localhost:8080")
 	//res.WriteHeader(http.StatusFound) // レスポンスを返す

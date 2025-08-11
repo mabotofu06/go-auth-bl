@@ -1,9 +1,10 @@
 package def
 
 type GoAuthApi struct {
-	name     string
-	method   string
-	endpoint string
+	Id       string
+	Name     string
+	Method   string
+	Endpoint string
 }
 
 type GoAuthConfig struct {
@@ -14,9 +15,13 @@ type GoAuthConfig struct {
 var CONFIG = GoAuthConfig{
 	PORT: 3000,
 	API: map[string]GoAuthApi{
-		"auth_permission": {name: "認可ID発行", method: "GET", endpoint: "/api/auth_permission"},
-		"login":           {name: "ログイン", method: "POST", endpoint: "/api/login"},
-		"access_token":    {name: "アクセストークン要求", method: "GET", endpoint: "/api/access_token"},
+		"permission":   {Id: "GAAPI00000", Name: "認可ID発行API", Method: "GET", Endpoint: "/api/v1/permission"},
+		"login":        {Id: "GAAPI00001", Name: "ログインAPI", Method: "POST", Endpoint: "/api/v1/login"},
+		"get_token":    {Id: "GAAPI10000", Name: "アクセストークン要求API", Method: "POST", Endpoint: "/api/v1/token/create"},
+		"check_token":  {Id: "GAAPI10001", Name: "トークン検証API", Method: "GET", Endpoint: "/api/v1/token/check"},
+		"delete_token": {Id: "GAAPI10002", Name: "トークン削除API", Method: "DELETE", Endpoint: "/api/v1/token/delete"},
+		"create_user":  {Id: "GAAPI20000", Name: "ユーザ登録API", Method: "POST", Endpoint: "/api/v1/user/create"},
+		"get_user":     {Id: "GAAPI20001", Name: "ユーザ情報取得API", Method: "GET", Endpoint: "/api/v1/user/inquiry"},
 	},
 }
 

@@ -22,7 +22,8 @@ type ResAuth struct {
 * @param r *http.Request
  */
 func GetPermission(res http.ResponseWriter, req *http.Request) {
-	if ReqMethodCheck(res, req, GET) != nil {
+	if err := ReqMethodCheck(res, req, GET); err != nil {
+		middleware.ResError(res, err)
 		return
 	}
 	queryParams := req.URL.Query()
@@ -48,18 +49,24 @@ func GetPermission(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// セッションID発行
 	sessionId := uuid.New().String()
+	if c, _ := req.Cookie("sesid"); c != nil && c.Value != "" {
+		// 既にセッションIDが存在する場合、既存セッションを再利用
+		fmt.Printf("既存セッションを再利用します: %s\n", c.Value)
+		sessionId = c.Value
+	}
+
+	// 新規登録 or 有効期限を延長
 	http.SetCookie(res, &http.Cookie{
 		Name:     "sesid",
 		Value:    sessionId,
 		Path:     "/",
 		MaxAge:   30 * 60,
-		HttpOnly: true,  //JSからのアクセスを防止（フロント側ではそのまま返却するよう設定）
-		Secure:   false, // 開発HTTPなら false に
+		HttpOnly: true,
+		Secure:   false, // HTTPSならtrue
 		SameSite: http.SameSiteLaxMode,
 	})
-	// 認可情報をセッションに保存(有効期限30分)
+
 	permission := session.PermissionInfo{
 		ClientId:    cid,
 		RedirectUri: ruri,
@@ -67,12 +74,16 @@ func GetPermission(res http.ResponseWriter, req *http.Request) {
 		State:       state,
 	}
 
+	// 認可情報をセッションに保存(有効期限30分)
 	//ログイン情報入力して送信まで30分有効期限を設ける
 	if err := cache.SetCache[session.PermissionInfo](sessionId, permission, int64(5), 30*time.Minute); err != nil {
-		middleware.ResError(res, a_err.NewAuthErr("セッション保存エラー"))
+		middleware.ResError(res, a_err.NewAuthErr("セッションエラー"))
 		return
 	}
 
 	body := ResAuth{Status: "OK"}
-	ResOk(res, &body)
+	if err := ResOk(res, &body); err != nil {
+		middleware.ResError(res, err)
+		return
+	}
 }

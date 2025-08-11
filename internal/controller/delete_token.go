@@ -13,7 +13,8 @@ import (
 * @param r *http.Request
  */
 func DeleteToken(res http.ResponseWriter, req *http.Request) {
-	if ReqMethodCheck(res, req, DELETE) != nil {
+	if err := ReqMethodCheck(res, req, DELETE); err != nil {
+		middleware.ResError(res, err)
 		return
 	}
 
@@ -21,6 +22,7 @@ func DeleteToken(res http.ResponseWriter, req *http.Request) {
 		Token string `json:"token"`
 	}](res, req)
 	if err != nil {
+		middleware.ResError(res, err)
 		return
 	}
 	tkn := reqBody.Token
@@ -42,5 +44,8 @@ func DeleteToken(res http.ResponseWriter, req *http.Request) {
 	}{
 		Message: "トークンが正常に削除されました。",
 	}
-	ResOk(res, &body)
+	if err := ResOk(res, &body); err != nil {
+		middleware.ResError(res, err)
+		return
+	}
 }

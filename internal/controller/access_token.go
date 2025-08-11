@@ -27,11 +27,13 @@ type ReqAccessToken struct {
 * @param r *http.Request
  */
 func GetAccessToken(res http.ResponseWriter, req *http.Request) {
-	if ReqMethodCheck(res, req, POST) != nil {
+	if err := ReqMethodCheck(res, req, POST); err != nil {
+		middleware.ResError(res, err)
 		return
 	}
 	reqBody, err := GetReqBody[ReqAccessToken](res, req)
 	if err != nil {
+		middleware.ResError(res, err)
 		return
 	}
 
@@ -80,5 +82,9 @@ func GetAccessToken(res http.ResponseWriter, req *http.Request) {
 		UserId:      tokenSession.UserId,
 		Expire:      int(time.Now().Add(time.Hour * 1).Unix()),
 	}
-	ResOk(res, &body)
+
+	if err := ResOk(res, &body); err != nil {
+		middleware.ResError(res, err)
+		return
+	}
 }
