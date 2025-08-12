@@ -1,7 +1,7 @@
 package main
 
 import (
-	"go-auth-bl/cache"
+	"go-auth-bl/internal/cache"
 	con "go-auth-bl/internal/controller"
 	"go-auth-bl/internal/def"
 	"go-auth-bl/pkg/logger"
@@ -15,7 +15,7 @@ func main() {
 		Addr:    port,
 		Handler: http.DefaultServeMux,
 	}
-	//ロガー初期化
+	//ロガー初期化(環境変数を元に出力するログレベルを設定)
 	logger.Init(os.Getenv("LOG_LEVEL"))
 	//キャッシュ初期化
 	if err := cache.Init(); err != nil {
@@ -27,7 +27,6 @@ func main() {
 	//認可コード要求API
 	http.HandleFunc(def.CONFIG.API["permission"].Endpoint, ApiWrapper(con.GetPermission))
 	// ログインAPI
-	//curl -X POST http://localhost/api/login -H "Content-Type: application/json" -d "{\"userId\": \"elf_hinmel\", \"email\": \"\", \"password\": \"password\"}"
 	http.HandleFunc(def.CONFIG.API["login"].Endpoint, ApiWrapper(con.PostLogin))
 	//アクセストークン要求API
 	http.HandleFunc(def.CONFIG.API["get_token"].Endpoint, ApiWrapper(con.GetAccessToken))

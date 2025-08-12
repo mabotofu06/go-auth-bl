@@ -4,7 +4,7 @@ import (
 	"go-auth-bl/internal/def"
 	"go-auth-bl/internal/middleware"
 	"go-auth-bl/internal/service"
-	a_err "go-auth-bl/pkg/error"
+	ctm_err "go-auth-bl/pkg/error"
 	"go-auth-bl/pkg/logger"
 	"net/http"
 )
@@ -34,7 +34,7 @@ func PostCreateUser(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if reqBody.UserId == "" || reqBody.Password == "" {
-		middleware.ResError(res, a_err.NewRequestErr("userIdまたはpasswordが空です"))
+		middleware.ResError(res, ctm_err.NewRequestErr("userIdまたはpasswordが空です"))
 		return
 	}
 

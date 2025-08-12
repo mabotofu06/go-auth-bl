@@ -3,10 +3,10 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
-	"go-auth-bl/cache"
+	"go-auth-bl/internal/cache"
 	apiif "go-auth-bl/internal/dto/if"
 	"go-auth-bl/internal/session"
-	a_err "go-auth-bl/pkg/error"
+	ctm_err "go-auth-bl/pkg/error"
 	"go-auth-bl/pkg/logger"
 	"net/http"
 	"os"
@@ -25,9 +25,9 @@ const (
 var Store = sessions.NewCookieStore([]byte("go-auth-session"))
 
 // リクエストメソッドが不適切な場合はエラーを返す
-func ReqMethodCheck(res http.ResponseWriter, req *http.Request, method string) *a_err.CustomError {
+func ReqMethodCheck(res http.ResponseWriter, req *http.Request, method string) *ctm_err.CustomError {
 	if req.Method != method {
-		err := a_err.NewRequestErr("リクエストメソッドが不適切です")
+		err := ctm_err.NewRequestErr("リクエストメソッドが不適切です")
 		logger.Print(logger.ERROR, "リクエストメソッドが不適切です: %s", req.Method)
 		return err
 	}
@@ -35,9 +35,9 @@ func ReqMethodCheck(res http.ResponseWriter, req *http.Request, method string) *
 }
 
 // POSTリクエストのリクエストボディを取得（リクエストボディが不適切な場合はエラーを返す）
-func GetReqBody[T any](res http.ResponseWriter, req *http.Request) (*T, *a_err.CustomError) {
+func GetReqBody[T any](res http.ResponseWriter, req *http.Request) (*T, *ctm_err.CustomError) {
 	if req.Body == nil {
-		err := a_err.NewRequestErr("リクエストボディが空です")
+		err := ctm_err.NewRequestErr("リクエストボディが空です")
 		logger.Print(logger.ERROR, "リクエストボディが空です")
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func GetReqBody[T any](res http.ResponseWriter, req *http.Request) (*T, *a_err.C
 	var request T
 
 	if err := json.NewDecoder(req.Body).Decode(&request); err != nil {
-		err := a_err.NewRequestErr("リクエストボディが不適切です")
+		err := ctm_err.NewRequestErr("リクエストボディが不適切です")
 		logger.Print(logger.ERROR, "リクエストボディエンコード中にエラーが発生しました: %v", err)
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func GetReqBody[T any](res http.ResponseWriter, req *http.Request) (*T, *a_err.C
 }
 
 // APIの正常終了時のレスポンスを返す
-func ResOk[T any](res http.ResponseWriter, data *T) *a_err.CustomError {
+func ResOk[T any](res http.ResponseWriter, data *T) *ctm_err.CustomError {
 	logger.Print(logger.DEBUG, "レスポンスデータ: %+v", data)
 
 	res.Header().Set("Content-Type", "application/json")
@@ -70,7 +70,7 @@ func ResOk[T any](res http.ResponseWriter, data *T) *a_err.CustomError {
 
 	json, err := json.Marshal(resBody)
 	if err != nil {
-		return a_err.NewServerErr("予期せぬエラーが発生しました")
+		return ctm_err.NewServerErr("予期せぬエラーが発生しました")
 	}
 	res.WriteHeader(http.StatusOK)
 	res.Write(json)
@@ -93,7 +93,7 @@ func EncodePassword(password string) (string, error) {
 }
 
 // ヘッダーのトークンと認証情報をチェック
-func CheckHeader(res http.ResponseWriter, req *http.Request) *a_err.CustomError {
+func CheckHeader(res http.ResponseWriter, req *http.Request) *ctm_err.CustomError {
 	auth := req.Header.Get("authorization")
 	tkn := req.Header.Get("token")
 
@@ -111,13 +111,13 @@ func CheckHeader(res http.ResponseWriter, req *http.Request) *a_err.CustomError 
 
 	tokenInfo, ok := cache.GetCache[session.TokenInfo](tkn, false)
 	if !ok {
-		err := a_err.NewRequestErr("トークンが不正です")
+		err := ctm_err.NewRequestErr("トークンが不正です")
 		logger.Print(logger.ERROR, "トークンが不正です")
 		return err
 	}
 	//クライアントIDをもとにauthorizationが想定通りの設定内容かチェック
 	if auth != fmt.Sprintf("Bearer %s", tokenInfo.ClientId) {
-		err := a_err.NewRequestErr("認証情報が不正です")
+		err := ctm_err.NewRequestErr("認証情報が不正です")
 		logger.Print(logger.ERROR, "認証情報が不正です")
 		return err
 	}

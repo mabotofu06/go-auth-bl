@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"fmt"
 	"go-auth-bl/internal/dto"
+	ctm_err "go-auth-bl/pkg/error"
 	"go-auth-bl/pkg/logger"
 	"time"
 )
@@ -31,12 +32,12 @@ func nowDatetime() (time.Time, error) {
 
 @return *dto.UserAuth: ユーザ認証情報
 */
-func GetUserAuthByUserId(userId string, db *sql.DB) (*dto.UserAuth, error) {
+func GetUserAuthByUserId(userId string, db *sql.DB) (*dto.UserAuth, *ctm_err.CustomError) {
 	query := fmt.Sprintf("SELECT * FROM %s WHERE delete_flag = 0 AND user_id = $1", TBL_USER_AUTH)
 	// ユーザIDを元にユーザ認証情報を取得
 	row := db.QueryRow(query, userId)
 	if row == nil {
-		return nil, fmt.Errorf("ユーザ情報が見つかりませんでした")
+		return nil, ctm_err.NewNotFoundErr("ユーザ情報が見つかりませんでした")
 	}
 
 	var userAuth dto.UserAuth
@@ -54,14 +55,14 @@ func GetUserAuthByUserId(userId string, db *sql.DB) (*dto.UserAuth, error) {
 		&userAuth.DeleteDate,
 	); err != nil {
 		logger.Print(logger.ERROR, "db.Query: %v", err)
-		return nil, err
+		return nil, ctm_err.UnexpectedDBErr
 	}
 
 	return &userAuth, nil
 }
 
 // パスワード誤り更新
-func UpdatePasswordFailNum(userId string, failCount int, db *sql.DB) error {
+func UpdatePasswordFailNum(userId string, failCount int, db *sql.DB) *ctm_err.CustomError {
 	PASS_FAIL_CNT := 5
 	passLock := 0
 
@@ -81,18 +82,18 @@ func UpdatePasswordFailNum(userId string, failCount int, db *sql.DB) error {
 	now, date_err := nowDatetime()
 	if date_err != nil {
 		logger.Print(logger.ERROR, "予期せぬエラーが発生しました: %v", date_err)
-		return date_err
+		return ctm_err.UnexpectedServerErr
 	}
 	if _, err := db.Exec(query, failCount, passLock, now, userId); err != nil {
 		logger.Print(logger.ERROR, "DB更新中にエラーが発生しました: %v", err)
-		return err
+		return ctm_err.UnexpectedDBErr
 	}
 
 	return nil
 }
 
 // パスワードロック解除
-func ResetPasswordLock(userId string, db *sql.DB) error {
+func ResetPasswordLock(userId string, db *sql.DB) *ctm_err.CustomError {
 	query := fmt.Sprintf("UPDATE %s"+
 		" SET"+
 		"  password_fail_cnt = $1,"+
@@ -104,30 +105,30 @@ func ResetPasswordLock(userId string, db *sql.DB) error {
 	now, err := nowDatetime()
 	if err != nil {
 		logger.Print(logger.ERROR, "db.Exec: %v", err)
-		return err
+		return ctm_err.UnexpectedServerErr
 	}
 	if _, err = db.Exec(query, 0, 0, now, userId); err != nil {
 		logger.Print(logger.ERROR, "DB更新中にエラーが発生しました: %v", err)
-		return err
+		return ctm_err.UnexpectedDBErr
 	}
 
 	return nil
 }
 
 // ユーザ存在確認
-func UserExists(userId string, db *sql.DB) (bool, error) {
+func UserExists(userId string, db *sql.DB) (bool, *ctm_err.CustomError) {
 	query := fmt.Sprintf(
 		"SELECT EXISTS(SELECT 1 FROM %s WHERE delete_flag = 0 AND user_id = $1)",
 		TBL_USER_AUTH,
 	)
 	var exists bool
 	if err := db.QueryRow(query, userId).Scan(&exists); err != nil {
-		return false, fmt.Errorf("ユーザ存在確認中にエラー: %w", err)
+		return false, ctm_err.UnexpectedDBErr
 	}
 	return exists, nil
 }
 
-func InsertUserAuth(userId string, hashedPassword string, db *sql.DB) (*dto.UserAuth, error) {
+func InsertUserAuth(userId string, hashedPassword string, db *sql.DB) (*dto.UserAuth, *ctm_err.CustomError) {
 	query := fmt.Sprintf("INSERT INTO %s (user_id, password) VALUES ($1, $2) RETURNING *", TBL_USER_AUTH)
 	row := db.QueryRow(query, userId, hashedPassword)
 
@@ -145,38 +146,43 @@ func InsertUserAuth(userId string, hashedPassword string, db *sql.DB) (*dto.User
 		&userAuth.UpdateDateTime,
 		&userAuth.DeleteDate,
 	); err != nil {
-		return nil, fmt.Errorf("DB挿入中にエラーが発生しました: %v", err)
+		return nil, ctm_err.UnexpectedDBErr
 	}
 
 	return &userAuth, nil
 }
 
 // 認証とユーザー情報を1トランザクションで作成
-func CreateUserWithInfo(db *sql.DB, userId string, userName string, hashedPassword string) error {
+func CreateUserWithInfo(db *sql.DB, userId string, userName string, hashedPassword string) *ctm_err.CustomError {
 	tx, err := db.Begin()
 	if err != nil {
-		return fmt.Errorf("begin tx: %w", err)
+		return ctm_err.NewDBErr("トランザクション開始中にエラーが発生しました")
 	}
 	defer func() {
 		// 異常時はロールバック（コミット成功時は no-op）
+		if err == nil {
+			logger.Print(logger.INFO, "トランザクションが正常に完了しました")
+			return
+		}
+		logger.Print(logger.ERROR, "異常が発生したためトランザクションをロールバックします")
 		_ = tx.Rollback()
 	}()
 
 	// 認証テーブルへ登録
 	queryAuth := fmt.Sprintf("INSERT INTO %s (user_id, password) VALUES ($1, $2)", TBL_USER_AUTH)
 	if _, err := tx.Exec(queryAuth, userId, hashedPassword); err != nil {
-		return fmt.Errorf("insert auth: %w", err)
+		return ctm_err.UnexpectedDBErr
 	}
 
 	// ユーザー情報テーブルへ登録（email/phone は未入力なら空で）
 	queryInfo := fmt.Sprintf("INSERT INTO %s (user_id, user_name) VALUES ($1, $2)", TBL_USER_INFO)
 	if _, err := tx.Exec(queryInfo, userId, userName); err != nil {
-		return fmt.Errorf("insert user_info: %w", err)
+		return ctm_err.UnexpectedDBErr
 	}
 
 	// すべて成功したらコミット
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("commit: %w", err)
+		return ctm_err.UnexpectedDBErr
 	}
 	return nil
 }

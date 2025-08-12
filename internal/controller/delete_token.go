@@ -1,10 +1,10 @@
 package controller
 
 import (
-	"go-auth-bl/cache"
+	"go-auth-bl/internal/cache"
 	"go-auth-bl/internal/def"
 	"go-auth-bl/internal/middleware"
-	a_err "go-auth-bl/pkg/error"
+	ctm_err "go-auth-bl/pkg/error"
 	"go-auth-bl/pkg/logger"
 	"net/http"
 )
@@ -31,12 +31,12 @@ func DeleteToken(res http.ResponseWriter, req *http.Request) {
 	tkn := reqBody.Token
 
 	if tkn == "" {
-		middleware.ResError(res, a_err.NewRequestErr("パラメータが不適切です"))
+		middleware.ResError(res, ctm_err.ParameterErr)
 		return
 	}
 
 	if err := cache.DeleteCache(tkn); err != nil {
-		middleware.ResError(res, a_err.NewServerErr("トークン削除中エラーが発生しました。"))
+		middleware.ResError(res, ctm_err.UnexpectedServerErr)
 		return
 	}
 

@@ -1,12 +1,12 @@
 package controller
 
 import (
-	"go-auth-bl/cache"
+	"go-auth-bl/internal/cache"
 	"go-auth-bl/internal/def"
 	"go-auth-bl/internal/middleware"
 	"go-auth-bl/internal/service"
 	"go-auth-bl/internal/session"
-	a_err "go-auth-bl/pkg/error"
+	ctm_err "go-auth-bl/pkg/error"
 	"go-auth-bl/pkg/logger"
 	"net/http"
 	"time"
@@ -38,13 +38,14 @@ func GetPermission(res http.ResponseWriter, req *http.Request) {
 	scope := queryParams.Get("scope")         //任意　リソースへのアクセス範囲
 	state := queryParams.Get("state")         //任意　CSRF対策
 
+	//パラメータチェック
 	if rtype != "code" || cid == "" || ruri == "" {
-		middleware.ResError(res, a_err.NewRequestErr("パラメータが不適切です"))
+		middleware.ResError(res, ctm_err.ParameterErr)
 		return
 	}
 	//クライアントID, リダイレクトURIチェック
 	if err := service.IsEnableClient(cid, ruri); err != nil {
-		middleware.ResError(res, a_err.NewAuthErr("無効な認証情報です"))
+		middleware.ResError(res, ctm_err.NewAuthErr("無効な認証情報です"))
 		return
 	}
 
@@ -56,15 +57,7 @@ func GetPermission(res http.ResponseWriter, req *http.Request) {
 	}
 
 	// 新規登録 or 有効期限を延長
-	http.SetCookie(res, &http.Cookie{
-		Name:     "sesid",
-		Value:    sessionId,
-		Path:     "/",
-		MaxAge:   30 * 60,
-		HttpOnly: true,
-		Secure:   false, // HTTPSならtrue
-		SameSite: http.SameSiteLaxMode,
-	})
+	session.SetSessionId(res, sessionId)
 
 	permission := session.PermissionInfo{
 		ClientId:    cid,
@@ -76,7 +69,7 @@ func GetPermission(res http.ResponseWriter, req *http.Request) {
 	// 認可情報をセッションに保存(有効期限30分)
 	//ログイン情報入力して送信まで30分有効期限を設ける
 	if err := cache.SetCache[session.PermissionInfo](sessionId, permission, int64(5), 30*time.Minute); err != nil {
-		middleware.ResError(res, a_err.NewAuthErr("セッションエラー"))
+		middleware.ResError(res, ctm_err.NewAuthErr("セッションエラー"))
 		return
 	}
 

@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	a_err "go-auth-bl/pkg/error"
+	ctm_err "go-auth-bl/pkg/error"
 	"go-auth-bl/pkg/logger"
 	"net/http"
 	"strings"
@@ -24,6 +24,6 @@ func AuthHandler(next http.Handler) http.Handler {
 
 			//sesid := r.Header.Get("sessionId")
 			//TODO:セッションチェック
-			a_err.Throw(a_err.NewAuthErr("認証中にエラーが発生しました"))
+			ResError(w, ctm_err.NewAuthErr("認証中にエラーが発生しました"))
 		})
 }

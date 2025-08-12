@@ -3,7 +3,7 @@ package common_db
 import (
 	"database/sql"
 	"fmt"
-	a_err "go-auth-bl/pkg/error"
+	ctm_err "go-auth-bl/pkg/error"
 	"go-auth-bl/pkg/logger"
 	"os"
 
@@ -11,7 +11,7 @@ import (
 )
 
 // データベースに接続
-func ConnectDB() *sql.DB {
+func ConnectDB() (*sql.DB, *ctm_err.CustomError) {
 	dbConnectInfo := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		os.Getenv("DB_HOST"),
@@ -23,14 +23,14 @@ func ConnectDB() *sql.DB {
 	)
 	db, err := sql.Open("postgres", dbConnectInfo)
 	if err != nil {
-		a_err.Throw(a_err.NewDBErr("予期せぬエラーが発生しました"))
+		return nil, ctm_err.UnexpectedDBErr
 	}
 	// 接続を確認
 	err = db.Ping()
 	if err != nil {
-		a_err.Throw(a_err.NewDBErr("予期せぬエラーが発生しました"))
+		return nil, ctm_err.UnexpectedDBErr
 	}
 	logger.Print(logger.DEBUG, "DB接続情報: %s", dbConnectInfo)
 	logger.Print(logger.INFO, "データベースとの接続に成功しました")
-	return db
+	return db, nil
 }
