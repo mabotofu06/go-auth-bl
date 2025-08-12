@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"fmt"
 	"go-auth-bl/internal/dto"
+	"go-auth-bl/pkg/logger"
 	"time"
 )
 
@@ -52,7 +53,7 @@ func GetUserAuthByUserId(userId string, db *sql.DB) (*dto.UserAuth, error) {
 		&userAuth.UpdateDateTime,
 		&userAuth.DeleteDate,
 	); err != nil {
-		fmt.Printf("db.Query: %v\n", err)
+		logger.Print(logger.ERROR, "db.Query: %v", err)
 		return nil, err
 	}
 
@@ -79,11 +80,11 @@ func UpdatePasswordFailNum(userId string, failCount int, db *sql.DB) error {
 
 	now, date_err := nowDatetime()
 	if date_err != nil {
-		fmt.Printf("予期せぬエラーが発生しました: %v\n", date_err)
+		logger.Print(logger.ERROR, "予期せぬエラーが発生しました: %v", date_err)
 		return date_err
 	}
 	if _, err := db.Exec(query, failCount, passLock, now, userId); err != nil {
-		fmt.Printf("DB更新中にエラーが発生しました: %v\n", err)
+		logger.Print(logger.ERROR, "DB更新中にエラーが発生しました: %v", err)
 		return err
 	}
 
@@ -102,11 +103,11 @@ func ResetPasswordLock(userId string, db *sql.DB) error {
 
 	now, err := nowDatetime()
 	if err != nil {
-		fmt.Printf("db.Exec: %v\n", err)
+		logger.Print(logger.ERROR, "db.Exec: %v", err)
 		return err
 	}
 	if _, err = db.Exec(query, 0, 0, now, userId); err != nil {
-		fmt.Printf("DB更新中にエラーが発生しました: %v\n", err)
+		logger.Print(logger.ERROR, "DB更新中にエラーが発生しました: %v", err)
 		return err
 	}
 

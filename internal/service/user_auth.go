@@ -6,6 +6,7 @@ import (
 	"go-auth-bl/internal/repository"
 	cmn "go-auth-bl/pkg/common"
 	a_err "go-auth-bl/pkg/error"
+	"go-auth-bl/pkg/logger"
 	"os"
 
 	"golang.org/x/crypto/bcrypt"
@@ -21,7 +22,7 @@ func GetUserAuthByUserId(userId string) (*dto.UserAuth, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("userAuth: %v\n", userAuth)
+	logger.Print(logger.INFO, "userAuth: %v", userAuth)
 	return userAuth, nil
 }
 
@@ -31,7 +32,7 @@ func PasswordCheck(userAuth *dto.UserAuth, password string) (bool, error) {
 	defer db.Close() // 関数終了時に接続を閉じる
 
 	if userAuth.PasswordLockFlag != 0 {
-		fmt.Println("パスワードがロックされています")
+		logger.Print(logger.WARN, "パスワードがロックされています")
 		return false, nil
 	}
 
@@ -40,8 +41,8 @@ func PasswordCheck(userAuth *dto.UserAuth, password string) (bool, error) {
 	if !ComparePassword(userAuth.Password, password) {
 		failCnt++
 		//テーブルに対してパスワード失敗回数を加算
-		fmt.Println("パスワードが一致しませんでした")
-		fmt.Printf("failCnt: %d\n", failCnt)
+		logger.Print(logger.WARN, "パスワードが一致しませんでした")
+		logger.Print(logger.INFO, "failCnt: %d", failCnt)
 
 		//パスワードロック込みでDBを更新
 		err := repository.UpdatePasswordFailNum(userAuth.UserId, failCnt, db)
@@ -49,7 +50,7 @@ func PasswordCheck(userAuth *dto.UserAuth, password string) (bool, error) {
 		return false, err
 	}
 
-	fmt.Println("Password matches")
+	logger.Print(logger.INFO, "Password matches")
 	//テーブルに対してパスワード失敗回数をリセット
 	err := repository.ResetPasswordLock(userAuth.UserId, db)
 	return true, err

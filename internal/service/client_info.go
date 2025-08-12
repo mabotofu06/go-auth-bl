@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-auth-bl/internal/repository"
 	cmn "go-auth-bl/pkg/common"
+	"go-auth-bl/pkg/logger"
 	"net/url"
 )
 
@@ -19,8 +20,8 @@ func IsEnableClient(clientId string, redirectUri string) error {
 		return fmt.Errorf("クライアント情報取得中にエラー: %v", err)
 	}
 
-	fmt.Printf("clientInfo: %v\n", clientInfo)
-	fmt.Printf("リダイレクト先チェック \n")
+	logger.Print(logger.DEBUG, "clientInfo: %v", clientInfo)
+	logger.Print(logger.DEBUG, "リダイレクト先チェック")
 
 	if err := validateRedirectHost(redirectUri, clientInfo.ClientHost); err != nil {
 		return fmt.Errorf("リダイレクト先チェックに失敗: %v", err)
@@ -34,7 +35,7 @@ func validateRedirectHost(redirectUri string, allowedHost string) error {
 	// URLをパースしてホスト名を取得
 	parsedURL, err := url.Parse(redirectUri)
 	if err != nil {
-		fmt.Printf("無効なリダイレクトURL: %v\n", err)
+		logger.Print(logger.ERROR, "無効なリダイレクトURL: %v", err)
 		return fmt.Errorf("無効なリダイレクトURLです")
 	}
 	redirectHost := parsedURL.Host
@@ -44,10 +45,10 @@ func validateRedirectHost(redirectUri string, allowedHost string) error {
 
 	// 完全一致でチェック(TODO: 今後サブドメイン含むリダイレクトURIも考慮できるように)
 	if redirectHost == allowedHost {
-		fmt.Printf("ホスト名が一致しました: %s\n", redirectHost)
+		logger.Print(logger.DEBUG, "ホスト名が一致しました: %s", redirectHost)
 		return nil
 	}
 
-	fmt.Printf("許可されていないホスト名: %s (許可: %s)\n", redirectHost, allowedHost)
+	logger.Print(logger.WARN, "許可されていないホスト名: %s (許可: %s)", redirectHost, allowedHost)
 	return fmt.Errorf("許可されていないリダイレクトURLのホスト名です")
 }

@@ -1,10 +1,11 @@
 package controller
 
 import (
-	"fmt"
+	"go-auth-bl/internal/def"
 	"go-auth-bl/internal/middleware"
 	"go-auth-bl/internal/service"
 	a_err "go-auth-bl/pkg/error"
+	"go-auth-bl/pkg/logger"
 	"net/http"
 )
 
@@ -20,18 +21,18 @@ type resBodyStruct struct {
 
 // ユーザ登録API
 func PostCreateUser(res http.ResponseWriter, req *http.Request) {
+	logger.Print(logger.INFO, "API: %sを実行します==========================", def.CONFIG.API["create_user"].Name)
+
 	if err := ReqMethodCheck(res, req, POST); err != nil {
 		middleware.ResError(res, err)
 		return
 	}
-
 	reqBody, err := GetReqBody[reqBodyStruct](res, req)
 	if err != nil {
 		middleware.ResError(res, err)
 		return
 	}
 
-	fmt.Printf("reqBody: %v\n", reqBody)
 	if reqBody.UserId == "" || reqBody.Password == "" {
 		middleware.ResError(res, a_err.NewRequestErr("userIdまたはpasswordが空です"))
 		return

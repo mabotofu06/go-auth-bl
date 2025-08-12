@@ -1,11 +1,12 @@
 package controller
 
 import (
-	"fmt"
 	"go-auth-bl/cache"
+	"go-auth-bl/internal/def"
 	"go-auth-bl/internal/middleware"
 	"go-auth-bl/internal/session"
 	a_err "go-auth-bl/pkg/error"
+	"go-auth-bl/pkg/logger"
 	"net/http"
 	"time"
 )
@@ -27,6 +28,7 @@ type ReqAccessToken struct {
 * @param r *http.Request
  */
 func GetAccessToken(res http.ResponseWriter, req *http.Request) {
+	logger.Print(logger.INFO, "API: %sを実行します=========================", def.CONFIG.API["get_token"].Name)
 	if err := ReqMethodCheck(res, req, POST); err != nil {
 		middleware.ResError(res, err)
 		return
@@ -39,11 +41,7 @@ func GetAccessToken(res http.ResponseWriter, req *http.Request) {
 
 	code := reqBody.Code        //必須
 	ruri := reqBody.RedirectUri //必須
-	state := reqBody.State      //任意
-
-	fmt.Printf("code=%s\n", code)
-	fmt.Printf("ruri=%s\n", ruri)
-	fmt.Printf("state=%s\n", state)
+	//state := reqBody.State      //任意
 
 	// パラメータチェック
 	if code == "" || ruri == "" {
@@ -54,14 +52,14 @@ func GetAccessToken(res http.ResponseWriter, req *http.Request) {
 	// ログインAPIで設定したTokenセッション取得
 	tokenSession, ok := cache.GetCache[session.CodeInfo](code, true)
 	if !ok {
-		fmt.Printf("セッションが存在しません\n")
+		logger.Print(logger.ERROR, "セッションが存在しません")
 		middleware.ResError(res, a_err.NewAuthErr("認可エラー"))
 		return
 	}
 
 	// リダイレクトURIチェック
 	if tokenSession.RedirectUri != ruri {
-		fmt.Printf("リダイレクトURIが不正です\n")
+		logger.Print(logger.ERROR, "リダイレクトURIが不正です")
 		middleware.ResError(res, a_err.NewAuthErr("認可エラー"))
 		return
 	}
@@ -75,7 +73,7 @@ func GetAccessToken(res http.ResponseWriter, req *http.Request) {
 	}
 	cache.SetCache[session.TokenInfo](tokenSession.AccessToken, tokenInfo, int64(1), ttl)
 
-	fmt.Printf("アクセストークンをキャッシュに保存しました: %s\n", tokenSession.AccessToken)
+	logger.Print(logger.DEBUG, "アクセストークンをキャッシュに保存しました: %s", tokenSession.AccessToken)
 
 	body := ResAccessToken{
 		AccessToken: tokenSession.AccessToken,

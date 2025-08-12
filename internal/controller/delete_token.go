@@ -1,10 +1,11 @@
 package controller
 
 import (
-	"fmt"
 	"go-auth-bl/cache"
+	"go-auth-bl/internal/def"
 	"go-auth-bl/internal/middleware"
 	a_err "go-auth-bl/pkg/error"
+	"go-auth-bl/pkg/logger"
 	"net/http"
 )
 
@@ -13,6 +14,8 @@ import (
 * @param r *http.Request
  */
 func DeleteToken(res http.ResponseWriter, req *http.Request) {
+	logger.Print(logger.INFO, "API: %sを実行します===========================", def.CONFIG.API["delete_token"].Name)
+
 	if err := ReqMethodCheck(res, req, DELETE); err != nil {
 		middleware.ResError(res, err)
 		return
@@ -26,8 +29,6 @@ func DeleteToken(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	tkn := reqBody.Token
-
-	fmt.Printf("token=%s\n", tkn)
 
 	if tkn == "" {
 		middleware.ResError(res, a_err.NewRequestErr("パラメータが不適切です"))

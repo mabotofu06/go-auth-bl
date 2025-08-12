@@ -7,6 +7,7 @@ import (
 	apiif "go-auth-bl/internal/dto/if"
 	"go-auth-bl/internal/session"
 	a_err "go-auth-bl/pkg/error"
+	"go-auth-bl/pkg/logger"
 	"net/http"
 	"os"
 
@@ -27,7 +28,7 @@ var Store = sessions.NewCookieStore([]byte("go-auth-session"))
 func ReqMethodCheck(res http.ResponseWriter, req *http.Request, method string) *a_err.CustomError {
 	if req.Method != method {
 		err := a_err.NewRequestErr("リクエストメソッドが不適切です")
-		fmt.Printf("リクエストメソッドが不適切です: %s\n", req.Method)
+		logger.Print(logger.ERROR, "リクエストメソッドが不適切です: %s", req.Method)
 		return err
 	}
 	return nil
@@ -37,7 +38,7 @@ func ReqMethodCheck(res http.ResponseWriter, req *http.Request, method string) *
 func GetReqBody[T any](res http.ResponseWriter, req *http.Request) (*T, *a_err.CustomError) {
 	if req.Body == nil {
 		err := a_err.NewRequestErr("リクエストボディが空です")
-		fmt.Println("リクエストボディが空です")
+		logger.Print(logger.ERROR, "リクエストボディが空です")
 		return nil, err
 	}
 
@@ -46,17 +47,17 @@ func GetReqBody[T any](res http.ResponseWriter, req *http.Request) (*T, *a_err.C
 
 	if err := json.NewDecoder(req.Body).Decode(&request); err != nil {
 		err := a_err.NewRequestErr("リクエストボディが不適切です")
-		fmt.Println("リクエストボディエンコード中にエラーが発生しました:", err)
+		logger.Print(logger.ERROR, "リクエストボディエンコード中にエラーが発生しました: %v", err)
 		return nil, err
 	}
 
-	fmt.Printf("request: %+v\n", request)
+	logger.Print(logger.DEBUG, "リクエストボディ内容: %+v", request)
 	return &request, nil
 }
 
 // APIの正常終了時のレスポンスを返す
 func ResOk[T any](res http.ResponseWriter, data *T) *a_err.CustomError {
-	fmt.Printf("response data: %+v\n", data)
+	logger.Print(logger.DEBUG, "レスポンスデータ: %+v", data)
 
 	res.Header().Set("Content-Type", "application/json")
 	resBody := apiif.Response[T]{
@@ -84,11 +85,10 @@ func EncodePassword(password string) (string, error) {
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
 	if err != nil {
-		fmt.Println("Error hashing password:", err)
+		logger.Print(logger.ERROR, "パスワードのハッシュ化中にエラーが発生しました: %v", err)
 		return "", err
 	}
 	encodedPassword := string(hashedPassword)
-	// fmt.Println("Encoded password:", encodedPassword)
 	return encodedPassword, nil
 }
 
@@ -105,20 +105,20 @@ func CheckHeader(res http.ResponseWriter, req *http.Request) *a_err.CustomError 
 	}
 
 	if !contains(skipEndpoints, req.URL.Path) {
-		fmt.Printf("トークンチェック対象外のためスキップします. エンドポイント: %s\n", req.URL.Path)
+		logger.Print(logger.INFO, "トークンチェック対象外のためスキップします. エンドポイント: %s", req.URL.Path)
 		return nil
 	}
 
 	tokenInfo, ok := cache.GetCache[session.TokenInfo](tkn, false)
 	if !ok {
 		err := a_err.NewRequestErr("トークンが不正です")
-		fmt.Println("トークンが不正です")
+		logger.Print(logger.ERROR, "トークンが不正です")
 		return err
 	}
 	//クライアントIDをもとにauthorizationが想定通りの設定内容かチェック
 	if auth != fmt.Sprintf("Bearer %s", tokenInfo.ClientId) {
 		err := a_err.NewRequestErr("認証情報が不正です")
-		fmt.Println("認証情報が不正です")
+		logger.Print(logger.ERROR, "認証情報が不正です")
 		return err
 	}
 

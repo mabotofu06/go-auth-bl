@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"go-auth-bl/internal/dto"
+	"go-auth-bl/pkg/logger"
 )
 
 // Coution: 大文字でないと外部パッケージから参照できない
@@ -25,7 +26,7 @@ func GetClientInfoByClientId(clientId string, db *sql.DB) (*dto.ClientInfo, erro
 		&clientInfo.UpdateDateTime,
 		&clientInfo.DeleteDate,
 	); err != nil {
-		fmt.Printf("db.Query: %v\n", err)
+		logger.Print(logger.ERROR, "db.Query: %v", err)
 		return nil, err
 	}
 

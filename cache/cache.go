@@ -2,7 +2,7 @@ package cache
 
 import (
 	"errors"
-	"fmt"
+	"go-auth-bl/pkg/logger"
 	"time"
 
 	"github.com/dgraph-io/ristretto"
@@ -15,7 +15,7 @@ var initNum = 0
 
 func Init() error {
 	if initNum > 0 {
-		fmt.Println("キャッシュは初期化済です.")
+		logger.Print(logger.INFO, "キャッシュは初期化済です.")
 		return nil
 	}
 	var err error
@@ -29,12 +29,13 @@ func Init() error {
 		return err
 	}
 	initNum++
-	fmt.Println("キャッシュが初期化されました.")
+	logger.Print(logger.INFO, "キャッシュが初期化されました.")
 	return nil
 }
 
 func checkCacheInitialized() error {
 	if initNum <= 0 || cache == nil {
+		logger.Print(logger.ERROR, "キャッシュが初期化されていません")
 		return errors.New("キャッシュが初期化されていません")
 	}
 	return nil
@@ -45,7 +46,7 @@ func SetCache[T any](key string, value T, cost int64, ttl time.Duration) error {
 	if err := checkCacheInitialized(); err != nil {
 		return err
 	}
-	fmt.Printf("キャッシュに設定しました: %s\n", key)
+	logger.Print(logger.DEBUG, "キャッシュに設定します: %s", key)
 	cache.SetWithTTL(key, value, cost, ttl)
 	cache.Wait() // キャッシュの設定が完了するまで待つ
 	return nil
@@ -55,7 +56,6 @@ func SetCache[T any](key string, value T, cost int64, ttl time.Duration) error {
 func GetCache[T any](key string, deleteFlag bool) (T, bool) {
 	var zero T
 	if err := checkCacheInitialized(); err != nil {
-		fmt.Println("キャッシュが初期化されていません:", err)
 		return zero, false
 	}
 
@@ -80,6 +80,6 @@ func DeleteCache(key string) error {
 		return err
 	}
 	cache.Del(key)
-	fmt.Printf("キャッシュから削除しました: %s\n", key)
+	logger.Print(logger.DEBUG, "キャッシュから削除しました: %s", key)
 	return nil
 }

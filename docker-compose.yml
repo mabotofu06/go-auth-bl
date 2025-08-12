@@ -31,6 +31,7 @@ services:
       DB_NAME: 'go-auth-db'
       DB_SSLMODE: 'disable'
       SALT: 'qawsedrftgyhujikolp'
+      LOG_LEVEL: 'debug' # ログレベル(リリース時はinfo)
     networks:
       - go-auth-network
 

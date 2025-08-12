@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	a_err "go-auth-bl/pkg/error"
+	"go-auth-bl/pkg/logger"
 	"os"
 
 	_ "github.com/lib/pq"
@@ -29,6 +30,7 @@ func ConnectDB() *sql.DB {
 	if err != nil {
 		a_err.Throw(a_err.NewDBErr("予期せぬエラーが発生しました"))
 	}
-	fmt.Println("Successfully connected to the database!")
+	logger.Print(logger.DEBUG, "DB接続情報: %s", dbConnectInfo)
+	logger.Print(logger.INFO, "データベースとの接続に成功しました")
 	return db
 }

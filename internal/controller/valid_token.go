@@ -1,11 +1,12 @@
 package controller
 
 import (
-	"fmt"
 	"go-auth-bl/cache"
+	"go-auth-bl/internal/def"
 	"go-auth-bl/internal/middleware"
 	"go-auth-bl/internal/session"
 	a_err "go-auth-bl/pkg/error"
+	"go-auth-bl/pkg/logger"
 	"net/http"
 )
 
@@ -18,6 +19,8 @@ type ResToken struct {
 * @param r *http.Request
  */
 func GetValidToken(res http.ResponseWriter, req *http.Request) {
+	logger.Print(logger.INFO, "API: %sを実行します===================================", def.CONFIG.API["check_token"].Name)
+
 	if err := ReqMethodCheck(res, req, GET); err != nil {
 		middleware.ResError(res, err)
 		return
@@ -25,7 +28,7 @@ func GetValidToken(res http.ResponseWriter, req *http.Request) {
 	queryParams := req.URL.Query()
 	tkn := queryParams.Get("token") //必須
 
-	fmt.Printf("token=%s\n", tkn)
+	logger.Print(logger.DEBUG, "クエリパラメータ: %v", queryParams)
 
 	if _, ok := cache.GetCache[session.TokenInfo](tkn, false); !ok {
 		middleware.ResError(res, a_err.NewAuthErr("無効なトークンです"))

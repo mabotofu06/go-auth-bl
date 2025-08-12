@@ -2,15 +2,19 @@ package controller
 
 import (
 	"go-auth-bl/cache"
+	"go-auth-bl/internal/def"
 	"go-auth-bl/internal/middleware"
 	"go-auth-bl/internal/service"
 	"go-auth-bl/internal/session"
 	a_err "go-auth-bl/pkg/error"
+	"go-auth-bl/pkg/logger"
 	"net/http"
 )
 
 // ユーザ情報取得API
 func GetUserInfo(res http.ResponseWriter, req *http.Request) {
+	logger.Print(logger.INFO, "API: %sを実行します============================", def.CONFIG.API["get_user"].Name)
+
 	if err := ReqMethodCheck(res, req, GET); err != nil {
 		middleware.ResError(res, err)
 		return

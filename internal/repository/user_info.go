@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"go-auth-bl/internal/dto"
+	"go-auth-bl/pkg/logger"
 )
 
 // ユーザIDを元にユーザ情報を取得（プライマリーキーから取得するため1件だけ）
@@ -26,7 +27,7 @@ func GetUserInfoByUserId(userId string, db *sql.DB) (*dto.UserInfo, error) {
 		&userInfo.UpdateDateTime,
 		&userInfo.DeleteDate,
 	); err != nil {
-		fmt.Printf("db.Query: %v\n", err)
+		logger.Print(logger.ERROR, "db.Query: %v", err)
 		return nil, err
 	}
 

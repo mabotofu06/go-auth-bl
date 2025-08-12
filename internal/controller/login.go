@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"go-auth-bl/cache"
 	"go-auth-bl/internal/def"
 	"go-auth-bl/internal/dto"
@@ -10,6 +9,7 @@ import (
 	"go-auth-bl/internal/service"
 	"go-auth-bl/internal/session"
 	a_err "go-auth-bl/pkg/error"
+	"go-auth-bl/pkg/logger"
 	"net/http"
 	"os"
 	"time"
@@ -24,11 +24,12 @@ type ResLogin struct {
 
 // ログインAPI
 func PostLogin(res http.ResponseWriter, req *http.Request) {
+	logger.Print(logger.INFO, "API: %sを実行します==============================", def.CONFIG.API["login"].Name)
+
 	if err := ReqMethodCheck(res, req, POST); err != nil {
 		middleware.ResError(res, err)
 		return
 	}
-
 	reqBody, err := GetReqBody[apiif.ReqLogin](res, req)
 	if err != nil {
 		middleware.ResError(res, err)
@@ -37,22 +38,22 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 	// CookieからセッションIDを取得
 	cookie, e := req.Cookie("sesid")
 	if e != nil {
-		fmt.Printf("セッションID取得に失敗しました\n")
+		logger.Print(logger.ERROR, "セッションIDが取得できません: %v", e)
 		middleware.ResError(res, a_err.NewAuthErr("認可エラー"))
 		return
 	}
 	sessionId := cookie.Value
-	fmt.Printf("sessionId: %s\n", sessionId)
+	logger.Print(logger.DEBUG, "sessionId: %s", sessionId)
 
 	//1回でもログインミスしたらセッションが無くなって認可エラーとなるため維持する（5回間違えればロックかかるため総攻撃では突破できない）
 	permissionInfo, ok := cache.GetCache[session.PermissionInfo](sessionId, false)
 
 	if !ok {
-		fmt.Printf("セッションが存在しません\n")
+		logger.Print(logger.ERROR, "セッションが存在しません")
 		middleware.ResError(res, a_err.NewAuthErr("認可エラー"))
 		return
 	}
-	fmt.Printf("permissionInfo: %+v\n", permissionInfo)
+	logger.Print(logger.DEBUG, "permissionInfo: %+v", permissionInfo)
 
 	userAuth, err := getUserAuth(reqBody.UsrId)
 	if err != nil {

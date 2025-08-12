@@ -1,12 +1,13 @@
 package controller
 
 import (
-	"fmt"
 	"go-auth-bl/cache"
+	"go-auth-bl/internal/def"
 	"go-auth-bl/internal/middleware"
 	"go-auth-bl/internal/service"
 	"go-auth-bl/internal/session"
 	a_err "go-auth-bl/pkg/error"
+	"go-auth-bl/pkg/logger"
 	"net/http"
 	"time"
 
@@ -22,22 +23,20 @@ type ResAuth struct {
 * @param r *http.Request
  */
 func GetPermission(res http.ResponseWriter, req *http.Request) {
+	logger.Print(logger.INFO, "API: %sを実行します====================================", def.CONFIG.API["permission"].Name)
+
 	if err := ReqMethodCheck(res, req, GET); err != nil {
 		middleware.ResError(res, err)
 		return
 	}
 	queryParams := req.URL.Query()
+	logger.Print(logger.DEBUG, "クエリパラメータ: %v", queryParams)
+
 	rtype := queryParams.Get("response_type") //必須 固定値:"code"
 	cid := queryParams.Get("client_id")       //必須 リクエスト元のクライアントID
 	ruri := queryParams.Get("redirect_uri")   //必須　認可サーバはこのURIが登録されている
 	scope := queryParams.Get("scope")         //任意　リソースへのアクセス範囲
 	state := queryParams.Get("state")         //任意　CSRF対策
-
-	fmt.Printf("rtype=%s\n", rtype)
-	fmt.Printf("cid=%s\n", cid)
-	fmt.Printf("ruri=%s\n", ruri)
-	fmt.Printf("scope=%s\n", scope)
-	fmt.Printf("state=%s\n", state)
 
 	if rtype != "code" || cid == "" || ruri == "" {
 		middleware.ResError(res, a_err.NewRequestErr("パラメータが不適切です"))
@@ -52,7 +51,7 @@ func GetPermission(res http.ResponseWriter, req *http.Request) {
 	sessionId := uuid.New().String()
 	if c, _ := req.Cookie("sesid"); c != nil && c.Value != "" {
 		// 既にセッションIDが存在する場合、既存セッションを再利用
-		fmt.Printf("既存セッションを再利用します: %s\n", c.Value)
+		logger.Print(logger.DEBUG, "既存セッションを再利用します: %s\n", c.Value)
 		sessionId = c.Value
 	}
 

@@ -2,9 +2,9 @@ package middleware
 
 import (
 	"encoding/json"
-	"fmt"
 	apiif "go-auth-bl/internal/dto/if"
 	a_err "go-auth-bl/pkg/error"
+	"go-auth-bl/pkg/logger"
 	"log"
 	"net/http"
 )
@@ -35,7 +35,7 @@ func ResError(res http.ResponseWriter, err *a_err.CustomError) {
 	res.Header().Set("Content-Type", "application/json")
 
 	if err == nil {
-		fmt.Println("エラーがnilです")
+		logger.Print(logger.ERROR, "エラーがnilです")
 		err = a_err.NewServerErr("予期せぬエラーが発生しました")
 	}
 
@@ -46,7 +46,7 @@ func ResError(res http.ResponseWriter, err *a_err.CustomError) {
 		Msg:    err.Msg,
 		Data:   nil,
 	}
-	fmt.Printf("response : %+v\n", body)
+	logger.Print(logger.DEBUG, "response : %+v", body)
 	json, _ := json.Marshal(body)
 
 	res.WriteHeader(err.Status)
