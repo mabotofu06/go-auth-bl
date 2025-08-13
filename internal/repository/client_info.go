@@ -1,5 +1,6 @@
 package repository
 
+// go:generate mockgen -source=client_info.go -destination=mock/mock_client_info_repository.go -package=repository_mock
 import (
 	"database/sql"
 	"fmt"
@@ -8,10 +9,16 @@ import (
 	"go-auth-bl/pkg/logger"
 )
 
-// Coution: 大文字でないと外部パッケージから参照できない
-func GetClientInfoByClientId(clientId string, db *sql.DB) (*dto.ClientInfo, *ctm_err.CustomError) {
+type IClientInfoRepository interface {
+	GetClientInfoByClientId(clientId string, db *sql.DB) (*dto.ClientInfo, *ctm_err.CustomError)
+}
+type clientInfoRepository struct{}
+
+var ClientInfoRepository IClientInfoRepository = &clientInfoRepository{}
+
+// クライアントIDを元にクライアント情報を取得(プライマリーキーを元に検索のため1件のみ取得)
+func (clientInfoRepository) GetClientInfoByClientId(clientId string, db *sql.DB) (*dto.ClientInfo, *ctm_err.CustomError) {
 	query := fmt.Sprintf("SELECT * FROM %s WHERE delete_flag = 0 AND client_id = $1", MST_CLIENT_INFO)
-	// クライアントIDを元にクライアント情報を取得(プライマリーキーを元に検索のため1件のみ取得)
 	row := db.QueryRow(query, clientId)
 	if row == nil {
 		return nil, ctm_err.NewNotFoundErr("クライアント情報が見つかりませんでした")

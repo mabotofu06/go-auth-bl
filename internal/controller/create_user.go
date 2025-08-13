@@ -9,13 +9,13 @@ import (
 	"net/http"
 )
 
-type reqBodyStruct struct {
+type ReqPostUser struct {
 	UserId   string `json:"userId"`
 	UserName string `json:"userName"`
 	Password string `json:"password"`
 }
 
-type resBodyStruct struct {
+type ResPostUser struct {
 	UserId string `json:"userId"`
 }
 
@@ -27,29 +27,29 @@ func PostCreateUser(res http.ResponseWriter, req *http.Request) {
 		middleware.ResError(res, err)
 		return
 	}
-	reqBody, err := GetReqBody[reqBodyStruct](res, req)
+	reqBody, err := GetReqBody[ReqPostUser](res, req)
 	if err != nil {
 		middleware.ResError(res, err)
 		return
 	}
 
 	if reqBody.UserId == "" || reqBody.Password == "" {
-		middleware.ResError(res, ctm_err.NewRequestErr("userIdまたはpasswordが空です"))
+		middleware.ResError(res, ctm_err.ParameterErr)
 		return
 	}
 
 	//ログインユーザとユーザ情報を登録
-	userId, err := service.CreateNewLoginUser(reqBody.UserId, reqBody.UserName, reqBody.Password)
+	userId, err := service.UserAuthService.CreateNewLoginUser(reqBody.UserId, reqBody.UserName, reqBody.Password)
 	if err != nil {
 		middleware.ResError(res, err)
 		return
 	}
 
-	data := resBodyStruct{
+	data := ResPostUser{
 		UserId: *userId,
 	}
 
-	if err := ResOk[resBodyStruct](res, &data); err != nil {
+	if err := ResOk[ResPostUser](res, &data); err != nil {
 		middleware.ResError(res, err)
 		return
 	}

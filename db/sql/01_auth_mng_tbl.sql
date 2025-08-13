@@ -5,6 +5,7 @@
 CREATE TABLE mng_user_auth_tbl(
   user_id           varchar(50) NOT NULL primary key,
   password          varchar(60) NOT NULL,
+  admin             int NOT NULL DEFAULT 0,
   password_histry1  varchar(60),
   password_histry2  varchar(60),
   password_histry3  varchar(60),

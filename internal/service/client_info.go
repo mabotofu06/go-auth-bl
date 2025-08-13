@@ -1,5 +1,6 @@
 package service
 
+//go:generate mockgen -source=client_info.go -destination=mock/mock_client_info.go -package=service_mock
 import (
 	"fmt"
 	"go-auth-bl/internal/repository"
@@ -9,8 +10,17 @@ import (
 	"net/url"
 )
 
+type IClientInfoService interface {
+	IsEnableClient(clientId string, redirectUri string) *ctm_err.CustomError
+}
+type clientInfoService struct{}
+
+var ClientInfoService IClientInfoService = clientInfoService{}
+
+var ClientInfoRepository repository.IClientInfoRepository = repository.ClientInfoRepository
+
 // ユーザIDを元にユーザ認証情報を取得
-func IsEnableClient(clientId string, redirectUri string) *ctm_err.CustomError {
+func (clientInfoService) IsEnableClient(clientId string, redirectUri string) *ctm_err.CustomError {
 	//TODO: このままだと都度DBに接続することになるので、キャッシュを利用するなどの対策を今後考慮
 	db, err := cmn.ConnectDB()
 	if err != nil {
@@ -19,7 +29,7 @@ func IsEnableClient(clientId string, redirectUri string) *ctm_err.CustomError {
 	defer db.Close() // 関数終了時に接続を閉じる
 
 	// サービス層を呼び出してデータを取得
-	clientInfo, err := repository.GetClientInfoByClientId(clientId, db)
+	clientInfo, err := ClientInfoRepository.GetClientInfoByClientId(clientId, db)
 	if clientInfo == nil || err != nil {
 		return ctm_err.NewDBErr(fmt.Sprintf("クライアント情報取得中にエラー: %v", err))
 	}

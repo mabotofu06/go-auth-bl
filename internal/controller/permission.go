@@ -18,6 +18,9 @@ type ResAuth struct {
 	Status string `json:"status"`
 }
 
+// クライアント情報周りの処理をおこなうサービス
+var ClientInfoService service.IClientInfoService = service.ClientInfoService
+
 /**
 * @param w http.ResponseWriter
 * @param r *http.Request
@@ -44,7 +47,7 @@ func GetPermission(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	//クライアントID, リダイレクトURIチェック
-	if err := service.IsEnableClient(cid, ruri); err != nil {
+	if err := ClientInfoService.IsEnableClient(cid, ruri); err != nil {
 		middleware.ResError(res, ctm_err.NewAuthErr("無効な認証情報です"))
 		return
 	}

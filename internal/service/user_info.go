@@ -7,8 +7,15 @@ import (
 	ctm_err "go-auth-bl/pkg/error"
 )
 
+type IUserInfoService interface {
+	IsEnableUserInfo(userId string) *ctm_err.CustomError
+}
+type userInfoService struct{}
+
+var UserInfoService IUserInfoService = userInfoService{}
+
 // ユーザIDを元にユーザ認証情報を取得
-func IsEnableUserInfo(userId string) *ctm_err.CustomError {
+func (userInfoService) IsEnableUserInfo(userId string) *ctm_err.CustomError {
 	//TODO: このままだと都度DBに接続することになるので、キャッシュを利用するなどの対策を今後考慮
 	db, err := cmn.ConnectDB()
 	if err != nil {

@@ -11,8 +11,18 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type IUserAuthService interface {
+	GetUserAuthByUserId(userId string) (*dto.UserAuth, *ctm_err.CustomError)
+	PasswordCheck(userAuth *dto.UserAuth, password string) (bool, *ctm_err.CustomError)
+	ComparePassword(hashedPassword, password string) bool
+	CreateNewLoginUser(userId string, userName string, password string) (*string, *ctm_err.CustomError)
+}
+type userAuthService struct{}
+
+var UserAuthService IUserAuthService = userAuthService{}
+
 // ユーザIDを元にユーザ認証情報を取得
-func GetUserAuthByUserId(userId string) (*dto.UserAuth, *ctm_err.CustomError) {
+func (userAuthService) GetUserAuthByUserId(userId string) (*dto.UserAuth, *ctm_err.CustomError) {
 	db, err := cmn.ConnectDB()
 	if err != nil {
 		return nil, err
@@ -29,7 +39,7 @@ func GetUserAuthByUserId(userId string) (*dto.UserAuth, *ctm_err.CustomError) {
 }
 
 // パスワードが一致するか確認
-func PasswordCheck(userAuth *dto.UserAuth, password string) (bool, *ctm_err.CustomError) {
+func (userAuthService) PasswordCheck(userAuth *dto.UserAuth, password string) (bool, *ctm_err.CustomError) {
 	db, err := cmn.ConnectDB()
 	if err != nil {
 		return false, err
@@ -43,7 +53,7 @@ func PasswordCheck(userAuth *dto.UserAuth, password string) (bool, *ctm_err.Cust
 
 	failCnt := userAuth.PasswordFailCnt
 
-	if !ComparePassword(userAuth.Password, password) {
+	if !UserAuthService.ComparePassword(userAuth.Password, password) {
 		failCnt++
 		//テーブルに対してパスワード失敗回数を加算
 		logger.Print(logger.WARN, "パスワードが一致しませんでした")
@@ -62,13 +72,13 @@ func PasswordCheck(userAuth *dto.UserAuth, password string) (bool, *ctm_err.Cust
 }
 
 // パスワードを比較する関数
-func ComparePassword(hashedPassword, password string) bool {
+func (userAuthService) ComparePassword(hashedPassword, password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 	return err == nil
 }
 
 // 新規ログインユーザを作成
-func CreateNewLoginUser(userId string, userName string, password string) (*string, *ctm_err.CustomError) {
+func (userAuthService) CreateNewLoginUser(userId string, userName string, password string) (*string, *ctm_err.CustomError) {
 	db, err := cmn.ConnectDB()
 	if err != nil {
 		return nil, err

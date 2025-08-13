@@ -96,7 +96,7 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 
 // サービス層を呼び出してデータを取得
 func getUserAuth(uid string) (*dto.UserAuth, *ctm_err.CustomError) {
-	uauth, err := service.GetUserAuthByUserId(uid)
+	uauth, err := service.UserAuthService.GetUserAuthByUserId(uid)
 	if err != nil {
 		if err == ctm_err.NotFoundErr {
 			return nil, ctm_err.NewAuthErr("ユーザー名またはパスワードが違います")
@@ -110,7 +110,7 @@ func getUserAuth(uid string) (*dto.UserAuth, *ctm_err.CustomError) {
 // パスワードが一致するか確認
 func checkPassword(uauth *dto.UserAuth, password string) *ctm_err.CustomError {
 	EncodePassword(password)
-	passCheck, err := service.PasswordCheck(uauth, os.Getenv("SALT")+password)
+	passCheck, err := service.UserAuthService.PasswordCheck(uauth, os.Getenv("SALT")+password)
 	if err != nil {
 		return ctm_err.NewServerErr(def.ERROR_MESSAGE["E0001"])
 	}

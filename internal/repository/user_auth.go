@@ -169,8 +169,9 @@ func CreateUserWithInfo(db *sql.DB, userId string, userName string, hashedPasswo
 	}()
 
 	// 認証テーブルへ登録
-	queryAuth := fmt.Sprintf("INSERT INTO %s (user_id, password) VALUES ($1, $2)", TBL_USER_AUTH)
-	if _, err := tx.Exec(queryAuth, userId, hashedPassword); err != nil {
+	queryAuth := fmt.Sprintf("INSERT INTO %s (user_id, password, admin) VALUES ($1, $2, $3)", TBL_USER_AUTH)
+	//権限は後々登録できるようにとりあえず0(一般ユーザ)
+	if _, err := tx.Exec(queryAuth, userId, hashedPassword, 0); err != nil {
 		return ctm_err.UnexpectedDBErr
 	}
 

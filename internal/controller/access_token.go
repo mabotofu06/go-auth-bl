@@ -45,7 +45,7 @@ func GetAccessToken(res http.ResponseWriter, req *http.Request) {
 
 	// パラメータチェック
 	if code == "" || ruri == "" {
-		middleware.ResError(res, ctm_err.NewRequestErr("パラメータが不適切です"))
+		middleware.ResError(res, ctm_err.ParameterErr)
 		return
 	}
 
@@ -53,14 +53,14 @@ func GetAccessToken(res http.ResponseWriter, req *http.Request) {
 	tokenSession, ok := cache.GetCache[session.CodeInfo](code, true)
 	if !ok {
 		logger.Print(logger.ERROR, "セッションが存在しません")
-		middleware.ResError(res, ctm_err.NewAuthErr("認可エラー"))
+		middleware.ResError(res, ctm_err.UnauthorizedErr)
 		return
 	}
 
 	// リダイレクトURIチェック
 	if tokenSession.RedirectUri != ruri {
 		logger.Print(logger.ERROR, "リダイレクトURIが不正です")
-		middleware.ResError(res, ctm_err.NewAuthErr("認可エラー"))
+		middleware.ResError(res, ctm_err.UnauthorizedErr)
 		return
 	}
 
