@@ -48,7 +48,7 @@ jobs:
           git tag "$next"
           git push origin "$next"
 
-      - name: Optional: Create GitHub Release
+      - name: (Optional)Create GitHub Release
         if: success()
         uses: softprops/action-gh-release@v2
         with:
