@@ -3,6 +3,7 @@ package dto
 type UserAuth struct {
 	UserId   string `json:"userId"`
 	Password string `json:"password"`
+	Admin    string `json:"admin"`
 	//null許容の場合はポインタ型にする
 	PasswordHistory1 *string `json:"passwordHistory1"`
 	PasswordHistory2 *string `json:"passwordHistory2"`

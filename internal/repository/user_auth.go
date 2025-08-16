@@ -35,15 +35,13 @@ func nowDatetime() (time.Time, error) {
 func GetUserAuthByUserId(userId string, db *sql.DB) (*dto.UserAuth, *ctm_err.CustomError) {
 	query := fmt.Sprintf("SELECT * FROM %s WHERE delete_flag = 0 AND user_id = $1", TBL_USER_AUTH)
 	// ユーザIDを元にユーザ認証情報を取得
-	row := db.QueryRow(query, userId)
-	if row == nil {
-		return nil, ctm_err.NewNotFoundErr("ユーザ情報が見つかりませんでした")
-	}
+	row := db.QueryRow(query, userId) //データが存在しなかった場合でもrowはnilにならないのでrow.Scan()で存在チェックをおこなう
 
 	var userAuth dto.UserAuth
 	if err := row.Scan(
 		&userAuth.UserId,
 		&userAuth.Password,
+		&userAuth.Admin,
 		&userAuth.PasswordHistory1,
 		&userAuth.PasswordHistory2,
 		&userAuth.PasswordHistory3,
@@ -55,7 +53,7 @@ func GetUserAuthByUserId(userId string, db *sql.DB) (*dto.UserAuth, *ctm_err.Cus
 		&userAuth.DeleteDate,
 	); err != nil {
 		logger.Print(logger.ERROR, "db.Query: %v", err)
-		return nil, ctm_err.UnexpectedDBErr
+		return nil, ctm_err.NewNotFoundErr("ユーザ情報が見つかりませんでした")
 	}
 
 	return &userAuth, nil
@@ -136,6 +134,7 @@ func InsertUserAuth(userId string, hashedPassword string, db *sql.DB) (*dto.User
 	if err := row.Scan(
 		&userAuth.UserId,
 		&userAuth.Password,
+		&userAuth.Admin,
 		&userAuth.PasswordHistory1,
 		&userAuth.PasswordHistory2,
 		&userAuth.PasswordHistory3,

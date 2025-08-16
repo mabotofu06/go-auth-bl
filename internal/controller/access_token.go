@@ -20,7 +20,6 @@ type ResAccessToken struct {
 type ReqAccessToken struct {
 	Code        string `json:"code"`
 	RedirectUri string `json:"redirect_uri"`
-	State       string `json:"state"`
 }
 
 /**
@@ -41,7 +40,6 @@ func GetAccessToken(res http.ResponseWriter, req *http.Request) {
 
 	code := reqBody.Code        //必須
 	ruri := reqBody.RedirectUri //必須
-	//state := reqBody.State      //任意
 
 	// パラメータチェック
 	if code == "" || ruri == "" {

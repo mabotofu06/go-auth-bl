@@ -20,6 +20,7 @@ import (
 type ResLogin struct {
 	Code        string `json:"code"`
 	RedirectUri string `json:"redirectUri"`
+	State       string `json:"state,omitempty"`
 }
 
 // ログインAPI
@@ -45,7 +46,8 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 	sessionId := cookie.Value
 	logger.Print(logger.DEBUG, "sessionId: %s", sessionId)
 
-	//1回でもログインミスしたらセッションが無くなって認可エラーとなるため維持する（5回間違えればロックかかるため総攻撃では突破できない想定）
+	// 1回でもログインミスしたらセッションが無くなって認可エラーとなるため維持する
+	// 5回間違えればロックかかるため総攻撃では突破できない想定）
 	permissionInfo, ok := cache.GetCache[session.PermissionInfo](sessionId, false)
 	if !ok {
 		logger.Print(logger.ERROR, "セッションが存在しません")
@@ -86,6 +88,7 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 	data := ResLogin{
 		Code:        code,
 		RedirectUri: permissionInfo.RedirectUri,
+		State:       permissionInfo.State,
 	}
 
 	if err := ResOk[ResLogin](res, &data); err != nil {
@@ -98,7 +101,7 @@ func PostLogin(res http.ResponseWriter, req *http.Request) {
 func getUserAuth(uid string) (*dto.UserAuth, *ctm_err.CustomError) {
 	uauth, err := service.UserAuthService.GetUserAuthByUserId(uid)
 	if err != nil {
-		if err == ctm_err.NotFoundErr {
+		if err.Status == 404 {
 			return nil, ctm_err.NewAuthErr("ユーザー名またはパスワードが違います")
 		}
 		return nil, ctm_err.NewServerErr(def.ERROR_MESSAGE["E0001"])
