@@ -1,17 +1,35 @@
 name: Auto Tag on Merge to Develop
 
 on:
-  push:
-    branches: [ develop ]
+  pull_request:
+    types: [closed]
+    branches: [develop]
+
 permissions:
   contents: write
+
 jobs:
   auto-tag:
+    # PR が closed でも merged=false (クローズのみ) の場合はスキップ
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
+      - name: Decide target commit (squash / merge / rebase 対応)
+        id: target
+        run: |
+          if [ -n "${{ github.event.pull_request.merge_commit_sha }}" ]; then
+            echo "commit=${{ github.event.pull_request.merge_commit_sha }}" >> $GITHUB_OUTPUT
+            echo "Use merge_commit_sha"
+          else
+            # squash で null になる場合や rebase merge 対策: develop の最新 (イベントトリガ commit) を使う
+            echo "commit=${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "Fallback to github.sha"
+          fi
+
       - name: Checkout (fetch all tags)
         uses: actions/checkout@v4
         with:
+          ref: ${{ steps.target.outputs.commit }}
           fetch-depth: 0
 
       - name: Get latest tag
