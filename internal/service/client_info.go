@@ -31,7 +31,8 @@ func (clientInfoService) IsEnableClient(clientId string, redirectUri string) *ct
 	// サービス層を呼び出してデータを取得
 	clientInfo, err := ClientInfoRepository.GetClientInfoByClientId(clientId, db)
 	if clientInfo == nil || err != nil {
-		return ctm_err.NewDBErr(fmt.Sprintf("クライアント情報取得中にエラー: %v", err))
+		logger.Print(logger.ERROR, "クライアント情報取得中にエラー: %v", err)
+		return ctm_err.NewDBErr("クライアント情報取得中にエラーが発生しました")
 	}
 
 	logger.Print(logger.DEBUG, "clientInfo: %v", clientInfo)

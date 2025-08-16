@@ -153,14 +153,13 @@ func InsertUserAuth(userId string, hashedPassword string, db *sql.DB) (*dto.User
 
 // 認証とユーザー情報を1トランザクションで作成
 func CreateUserWithInfo(db *sql.DB, userId string, userName string, hashedPassword string) *ctm_err.CustomError {
+	committed := false
 	tx, err := db.Begin()
 	if err != nil {
 		return ctm_err.NewDBErr("トランザクション開始中にエラーが発生しました")
 	}
 	defer func() {
-		// 異常時はロールバック（コミット成功時は no-op）
-		if err == nil {
-			logger.Print(logger.INFO, "トランザクションが正常に完了しました")
+		if committed {
 			return
 		}
 		logger.Print(logger.ERROR, "異常が発生したためトランザクションをロールバックします")
@@ -184,5 +183,7 @@ func CreateUserWithInfo(db *sql.DB, userId string, userName string, hashedPasswo
 	if err := tx.Commit(); err != nil {
 		return ctm_err.UnexpectedDBErr
 	}
+	committed = true
+	logger.Print(logger.INFO, "ユーザと認証情報を正常に作成しました")
 	return nil
 }

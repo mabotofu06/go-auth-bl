@@ -77,8 +77,8 @@ func ResOk[T any](res http.ResponseWriter, data *T) *ctm_err.CustomError {
 // bcryptを使ってパスワードをハッシュ化
 // エンコードされた文字列の長さは60文字
 func EncodePassword(password string) (string, error) {
-	salt := os.Getenv("SALT")
-	pass := salt + password
+	pepper := os.Getenv("PEPPER")
+	pass := pepper + password
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
 	if err != nil {
@@ -101,7 +101,7 @@ func CheckHeader(res http.ResponseWriter, req *http.Request) *ctm_err.CustomErro
 		"/api/v1/token/create",
 	}
 
-	if !contains(skipEndpoints, req.URL.Path) {
+	if contains(skipEndpoints, req.URL.Path) {
 		logger.Print(logger.INFO, "トークンチェック対象外のためスキップします. エンドポイント: %s", req.URL.Path)
 		return nil
 	}

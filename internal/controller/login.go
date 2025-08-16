@@ -113,7 +113,7 @@ func getUserAuth(uid string) (*dto.UserAuth, *ctm_err.CustomError) {
 // パスワードが一致するか確認
 func checkPassword(uauth *dto.UserAuth, password string) *ctm_err.CustomError {
 	EncodePassword(password)
-	passCheck, err := service.UserAuthService.PasswordCheck(uauth, os.Getenv("SALT")+password)
+	passCheck, err := service.UserAuthService.PasswordCheck(uauth, os.Getenv("PEPPER")+password)
 	if err != nil {
 		return ctm_err.NewServerErr(def.ERROR_MESSAGE["E0001"])
 	}

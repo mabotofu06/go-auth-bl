@@ -30,7 +30,7 @@ services:
       DB_PASSWORD: 'postgres'
       DB_NAME: 'go-auth-db'
       DB_SSLMODE: 'disable'
-      SALT: 'qawsedrftgyhujikolp' #本設定はローカル用、リリース時は別途設定
+      PEPPER: 'qawsedrftgyhujikolp' #本設定はローカル用、リリース時は別途設定
       LOG_LEVEL: 'debug' # ログレベル(リリース時はinfo)
     networks:
       - go-auth-network

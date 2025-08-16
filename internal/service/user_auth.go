@@ -94,7 +94,7 @@ func (userAuthService) CreateNewLoginUser(userId string, userName string, passwo
 		return nil, ctm_err.NewRequestErr("ユーザIDがすでに存在します")
 	}
 
-	hashedPassword, e := bcrypt.GenerateFromPassword([]byte(os.Getenv("SALT")+password), bcrypt.DefaultCost)
+	hashedPassword, e := bcrypt.GenerateFromPassword([]byte(os.Getenv("PEPPER")+password), bcrypt.DefaultCost)
 	if e != nil {
 		return nil, ctm_err.UnexpectedServerErr
 	}
