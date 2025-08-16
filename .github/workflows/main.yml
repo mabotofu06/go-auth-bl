@@ -1,0 +1,57 @@
+name: Auto Tag on Merge to Develop
+
+on:
+  push:
+    branches: [ develop ]
+permissions:
+  contents: write
+jobs:
+  auto-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (fetch all tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest tag
+        id: get_tag
+        run: |
+          git fetch --tags
+          latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$latest_tag" ]; then
+            # タグが見つからなければ0.0.0スタート
+            echo "latest_tag=v0.0.0" >> $GITHUB_OUTPUT
+          else
+            # タグが見つかればそのまま
+            echo "latest_tag=$latest_tag" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Calc next tag (patch version count up)
+        id: calc
+        run: |
+          lt="${{ steps.get_tag.outputs.latest_tag }}"
+          base="${lt#v}" #v0.0.0 => 0.0.0のように変換
+          IFS='.' read -r major minor patch <<< "$base" #.区切りでmajor=0, minor=0, patch=0に割り当て
+          patch=$((patch+1))  #patchをカウントアップ
+          next="v${major}.${minor}.${patch}"
+          echo "Next tag: $next"
+          echo "next_tag=$next" >> $GITHUB_OUTPUT
+
+      - name: Create tag (if not already tagged)
+        run: |
+          next="${{ steps.calc.outputs.next_tag }}"
+          if git rev-parse "$next" >/dev/null 2>&1; then
+            echo "Tag $next already exists. Skip."
+            exit 0
+          fi
+          git tag "$next"
+          git push origin "$next"
+
+      - name: Optional: Create GitHub Release
+        if: success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.calc.outputs.next_tag }}
+          name: Release ${{ steps.calc.outputs.next_tag }}
+          generate_release_notes: true
