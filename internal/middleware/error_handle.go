@@ -2,9 +2,9 @@ package middleware
 
 import (
 	"encoding/json"
-	"fmt"
 	apiif "go-auth-bl/internal/dto/if"
-	a_err "go-auth-bl/pkg/error"
+	ctm_err "go-auth-bl/pkg/error"
+	"go-auth-bl/pkg/logger"
 	"log"
 	"net/http"
 )
@@ -20,9 +20,9 @@ func ErrorHandler(next http.Handler) http.Handler {
 				}
 
 				log.Printf("cacthed err: %v", err)
-				customErr, ok := err.(*a_err.CustomError)
+				customErr, ok := err.(*ctm_err.CustomError)
 				if !ok {
-					customErr = a_err.NewServerErr("予期せぬエラーが発生しました")
+					customErr = ctm_err.NewServerErr("予期せぬエラーが発生しました")
 				}
 				ResError(w, customErr)
 			}()
@@ -31,12 +31,12 @@ func ErrorHandler(next http.Handler) http.Handler {
 		})
 }
 
-func ResError(res http.ResponseWriter, err *a_err.CustomError) {
+func ResError(res http.ResponseWriter, err *ctm_err.CustomError) {
 	res.Header().Set("Content-Type", "application/json")
 
 	if err == nil {
-		fmt.Println("エラーがnilです")
-		err = a_err.NewServerErr("予期せぬエラーが発生しました")
+		logger.Print(logger.ERROR, "エラーがnilです")
+		err = ctm_err.NewServerErr("予期せぬエラーが発生しました")
 	}
 
 	body := apiif.Response[any]{
@@ -46,7 +46,7 @@ func ResError(res http.ResponseWriter, err *a_err.CustomError) {
 		Msg:    err.Msg,
 		Data:   nil,
 	}
-	fmt.Printf("response : %+v\n", body)
+	logger.Print(logger.DEBUG, "response : %+v", body)
 	json, _ := json.Marshal(body)
 
 	res.WriteHeader(err.Status)

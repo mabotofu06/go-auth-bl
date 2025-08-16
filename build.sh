@@ -1,13 +1,19 @@
 #!/bin/bash
 
+ENV_NAME="${1:-localhost}"
+
+# Docker Composeサービスを停止・削除
+docker-compose down
+# ボリュームも含めて完全削除
+docker-compose down -v
+
 cd ./db
 sh build.sh
 cd ..
 
-# 静的ページをコピー
-echo "===== Build and Copying static pages... ====="
+# 静的ページをビルドしてコピー
 cd ../go-auth-ui
-npm run build
+sh build.sh ${ENV_NAME}
 cd ../go-auth-bl
 cp -r ../go-auth-ui/build ./
 echo ""

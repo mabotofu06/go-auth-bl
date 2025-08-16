@@ -1,20 +1,11 @@
-package a_err
+package ctm_err
 
-import "fmt"
-
+// go-auth-blで使用するカスタムエラー定義
 type CustomError struct {
 	Status int
 	Code   string
 	Type   string
 	Msg    string
-}
-
-func (e *CustomError) Error() string {
-	return fmt.Sprintf("Status: %d, Code: %s, Msg: %s Type: %s", e.Status, e.Code, e.Type, e.Msg)
-}
-
-func Throw(err *CustomError) {
-	panic(err)
 }
 
 func NewServerErr(msg string) *CustomError {
@@ -41,14 +32,6 @@ func NewRequestErr(msg string) *CustomError {
 		Msg:    msg,
 	}
 }
-func NewNotFoundErr(msg string) *CustomError {
-	return &CustomError{
-		Status: 404,
-		Code:   "W0004",
-		Type:   "非存在エラー",
-		Msg:    msg,
-	}
-}
 func NewAuthErr(msg string) *CustomError {
 	return &CustomError{
 		Status: 401,
@@ -57,34 +40,35 @@ func NewAuthErr(msg string) *CustomError {
 		Msg:    msg,
 	}
 }
+func NewPermissionErr(msg string) *CustomError {
+	return &CustomError{
+		Status: 403,
+		Code:   "W0003",
+		Type:   "権限エラー",
+		Msg:    msg,
+	}
+}
+func NewNotFoundErr(msg string) *CustomError {
+	return &CustomError{
+		Status: 404,
+		Code:   "W0004",
+		Type:   "非存在エラー",
+		Msg:    msg,
+	}
+}
 
-var InternalServerErr = &CustomError{
-	500,
-	"E0001",
-	"サーバーエラーが発生しました",
-	"",
-}
-var BadRequestErr = &CustomError{
-	400,
-	"W0001",
-	"リクエストエラーが発生しました",
-	"",
-}
-var UnauthorizedErr = &CustomError{
-	401,
-	"W0002",
-	"認証エラーが発生しました",
-	"",
-}
-var ForbiddenErr = &CustomError{
-	403,
-	"W0003",
-	"権限がありません",
-	"",
-}
-var NotFoundErr = &CustomError{
-	404,
-	"W0004",
-	"該当の項目が見つかりませんでした",
-	"",
-}
+var (
+	InternalServerErr   = NewServerErr("サーバーエラーが発生しました")
+	UnexpectedServerErr = NewServerErr("予期せぬエラーが発生しました")
+
+	UnexpectedDBErr = NewDBErr("予期せぬDBエラーが発生しました")
+
+	BadRequestErr = NewRequestErr("リクエストエラーが発生しました")
+	ParameterErr  = NewRequestErr("パラメータエラーが発生しました")
+
+	UnauthorizedErr = NewAuthErr("認証エラーが発生しました")
+
+	ForbiddenErr = NewPermissionErr("権限エラーが発生しました")
+
+	NotFoundErr = NewNotFoundErr("非存在エラーが発生しました")
+)

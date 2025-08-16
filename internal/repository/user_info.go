@@ -4,45 +4,33 @@ import (
 	"database/sql"
 	"fmt"
 	"go-auth-bl/internal/dto"
-	"log"
+	ctm_err "go-auth-bl/pkg/error"
+	"go-auth-bl/pkg/logger"
 )
 
-// Coution: 大文字でないと外部パッケージから参照できない
-func GetUserInfosByUserId(userId string, db *sql.DB) ([]dto.UserInfo, error) {
-	const tableName = "mng_user_info_tbl"
-	query := fmt.Sprintf("SELECT * FROM %s WHERE delete_flag = 0 AND user_id = $1", tableName)
-	// ユーザIDを元にユーザ情報を取得
-	rows, err := db.Query(query, userId)
-
-	if err != nil {
-		fmt.Printf("db.Query: %v\n", err)
-		return nil, err
-	}
-	defer rows.Close()
-
-	var userInfoList []dto.UserInfo
-
-	for rows.Next() {
-		var userInfo dto.UserInfo
-		if err := rows.Scan(
-			&userInfo.UserId,
-			&userInfo.UserName,
-			&userInfo.Email,
-			&userInfo.Phone,
-			&userInfo.DeleteFlag,
-			&userInfo.CreateDateTime,
-			&userInfo.UpdateDateTime,
-			&userInfo.DeleteDate,
-		); err != nil {
-			log.Fatal(err)
-		}
-		userInfoList = append(userInfoList, userInfo)
+// ユーザIDを元にユーザ情報を取得（プライマリーキーから取得するため1件だけ）
+func GetUserInfoByUserId(userId string, db *sql.DB) (*dto.UserInfo, *ctm_err.CustomError) {
+	query := fmt.Sprintf("SELECT * FROM %s WHERE delete_flag = 0 AND user_id = $1", TBL_USER_INFO)
+	row := db.QueryRow(query, userId)
+	if row == nil {
+		return nil, ctm_err.NewNotFoundErr("ユーザ情報が見つかりませんでした")
 	}
 
-	if err := rows.Err(); err != nil {
-		fmt.Printf("rows.Err: %v\n", err)
-		return nil, err
+	var userInfo dto.UserInfo
+	if err := row.Scan(
+		&userInfo.UserId,
+		&userInfo.UserName,
+		&userInfo.Email,
+		&userInfo.Gender,
+		&userInfo.Age,
+		&userInfo.DeleteFlag,
+		&userInfo.CreateDateTime,
+		&userInfo.UpdateDateTime,
+		&userInfo.DeleteDate,
+	); err != nil {
+		logger.Print(logger.ERROR, "db.Query: %v", err)
+		return nil, ctm_err.UnexpectedDBErr
 	}
 
-	return userInfoList, nil
+	return &userInfo, nil
 }

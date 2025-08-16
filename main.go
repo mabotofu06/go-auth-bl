@@ -1,40 +1,54 @@
 package main
 
 import (
-	"fmt"
+	"go-auth-bl/internal/cache"
 	con "go-auth-bl/internal/controller"
+	"go-auth-bl/internal/def"
+	"go-auth-bl/pkg/logger"
 	"net/http"
+	"os"
 )
 
 func main() {
+	port := ":8080"
 	server := http.Server{
-		Addr:    ":8080",
+		Addr:    port,
 		Handler: http.DefaultServeMux,
 	}
+	//ロガー初期化(環境変数を元に出力するログレベルを設定)
+	logger.Init(os.Getenv("LOG_LEVEL"))
+	//キャッシュ初期化
+	if err := cache.Init(); err != nil {
+		logger.Print(logger.ERROR, "キャッシュ初期化エラー: %v", err)
+		return
+	}
 
+	//各APIのエンドポイントを設定
 	//認可コード要求API
-	http.HandleFunc("/api/v1/auth_permission", ApiWrapper(con.GetPermission))
+	http.HandleFunc(def.CONFIG.API["permission"].Endpoint, ApiWrapper(con.GetPermission))
 	// ログインAPI
-	//curl -X POST http://localhost/api/login -H "Content-Type: application/json" -d "{\"userId\": \"elf_hinmel\", \"email\": \"\", \"password\": \"password\"}"
-	http.HandleFunc("/api/v1/login", ApiWrapper(con.PostLogin))
+	http.HandleFunc(def.CONFIG.API["login"].Endpoint, ApiWrapper(con.PostLogin))
 	//アクセストークン要求API
-	http.HandleFunc("/api/v1/access_token", ApiWrapper(con.GetAccessToken))
+	http.HandleFunc(def.CONFIG.API["get_token"].Endpoint, ApiWrapper(con.GetAccessToken))
+	//トークン検証API
+	http.HandleFunc(def.CONFIG.API["check_token"].Endpoint, ApiWrapper(con.GetValidToken))
+	//トークン削除API
+	http.HandleFunc(def.CONFIG.API["delete_token"].Endpoint, ApiWrapper(con.DeleteToken))
+	//ユーザ登録API
+	http.HandleFunc(def.CONFIG.API["create_user"].Endpoint, ApiWrapper(con.PostCreateUser))
+	//ユーザ情報取得API
+	http.HandleFunc(def.CONFIG.API["get_user"].Endpoint, ApiWrapper(con.GetUserInfo))
 
 	//http://localhost/ にアクセスすると画面が返却
-	http.HandleFunc("/", ApiWrapper(root))
+	http.HandleFunc("/", root)
 
-	fmt.Println("Starting server at port 8080")
-
-	err := server.ListenAndServe()
-	if err != nil {
-		fmt.Println("Error starting server:", err)
+	logger.Print(logger.INFO, "サーバー起動中: ポート %s", port)
+	if err := server.ListenAndServe(); err != nil {
+		logger.Print(logger.ERROR, "サーバー起動エラー: %v", err)
 	}
 }
 
 func root(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("sesid", "session-id-1234-5678-9000")
-	w.Header().Set("acc", "acc-id-1234-5678-9000")
-
 	http.FileServer(http.Dir("./build")).ServeHTTP(w, r)
 	return
 }
@@ -42,5 +56,6 @@ func root(w http.ResponseWriter, r *http.Request) {
 func ApiWrapper(
 	controller func(w http.ResponseWriter, r *http.Request),
 ) func(w http.ResponseWriter, r *http.Request) {
+	//logger.Print(logger.INFO, "API: %s 呼び出します", apiInfo.Name)
 	return controller
 }

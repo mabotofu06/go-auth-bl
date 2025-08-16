@@ -1,17 +1,25 @@
 package controller
 
 import (
-	"fmt"
+	"go-auth-bl/internal/cache"
+	"go-auth-bl/internal/def"
 	"go-auth-bl/internal/middleware"
 	"go-auth-bl/internal/session"
-	a_err "go-auth-bl/pkg/error"
+	ctm_err "go-auth-bl/pkg/error"
+	"go-auth-bl/pkg/logger"
 	"net/http"
 	"time"
 )
 
 type ResAccessToken struct {
 	AccessToken string `json:"access_token"`
+	UserId      string `json:"user_id"`
 	Expire      int    `json:"expire"`
+}
+
+type ReqAccessToken struct {
+	Code        string `json:"code"`
+	RedirectUri string `json:"redirect_uri"`
 }
 
 /**
@@ -19,44 +27,60 @@ type ResAccessToken struct {
 * @param r *http.Request
  */
 func GetAccessToken(res http.ResponseWriter, req *http.Request) {
-	if ReqMethodCheck(res, req, GET) != nil {
+	logger.Print(logger.INFO, "API: %sを実行します=========================", def.CONFIG.API["get_token"].Name)
+	if err := ReqMethodCheck(res, req, POST); err != nil {
+		middleware.ResError(res, err)
 		return
 	}
-	queryParams := req.URL.Query()
-	code := queryParams.Get("code")         //必須
-	ruri := queryParams.Get("redirect_uri") //必須　認可サーバはこのURIが登録されている
-	state := queryParams.Get("state")       //任意　CSRF対策
+	reqBody, err := GetReqBody[ReqAccessToken](res, req)
+	if err != nil {
+		middleware.ResError(res, err)
+		return
+	}
 
-	fmt.Printf("code=%s\n", code)
-	fmt.Printf("ruri=%s\n", ruri)
-	fmt.Printf("state=%s\n", state)
+	code := reqBody.Code        //必須
+	ruri := reqBody.RedirectUri //必須
 
 	// パラメータチェック
-	// if code != "" || ruri == "" {
-	// 	middleware.ResError(res, a_err.NewRequestErr("パラメータが不適切です"))
-	// 	return
-	// }
+	if code == "" || ruri == "" {
+		middleware.ResError(res, ctm_err.ParameterErr)
+		return
+	}
 
 	// ログインAPIで設定したTokenセッション取得
-	tokenSession, err := session.GetValue[session.TokenInfo](code, req)
-	if err != nil {
-		fmt.Printf("セッションが存在しません\n")
-		middleware.ResError(res, a_err.NewAuthErr("認可エラー"))
+	tokenSession, ok := cache.GetCache[session.CodeInfo](code, true)
+	if !ok {
+		logger.Print(logger.ERROR, "セッションが存在しません")
+		middleware.ResError(res, ctm_err.UnauthorizedErr)
 		return
 	}
 
 	// リダイレクトURIチェック
 	if tokenSession.RedirectUri != ruri {
-		fmt.Printf("リダイレクトURIが不正です\n")
-		middleware.ResError(res, a_err.NewAuthErr("認可エラー"))
+		logger.Print(logger.ERROR, "リダイレクトURIが不正です")
+		middleware.ResError(res, ctm_err.UnauthorizedErr)
 		return
 	}
 
-	// TODO:アクセストークンをDBに保存
+	// アクセストークンをキャッシュに保存（1時間の期限）
+	ttl := time.Hour * 1
+	tokenInfo := session.TokenInfo{
+		ClientId: tokenSession.ClientId,
+		UserId:   tokenSession.UserId,
+		Scope:    tokenSession.Scope,
+	}
+	cache.SetCache[session.TokenInfo](tokenSession.AccessToken, tokenInfo, int64(1), ttl)
+
+	logger.Print(logger.DEBUG, "アクセストークンをキャッシュに保存しました: %s", tokenSession.AccessToken)
 
 	body := ResAccessToken{
 		AccessToken: tokenSession.AccessToken,
+		UserId:      tokenSession.UserId,
 		Expire:      int(time.Now().Add(time.Hour * 1).Unix()),
 	}
-	ResOk(res, &body)
+
+	if err := ResOk(res, &body); err != nil {
+		middleware.ResError(res, err)
+		return
+	}
 }

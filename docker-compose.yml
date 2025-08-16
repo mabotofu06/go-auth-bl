@@ -23,14 +23,15 @@ services:
     ports:
       - "80:8080"
     environment:
-      # Postgreの設定を定義
+      # Postgreの設定を定義（local用）
       DB_HOST: 'go-auth-db'
       DB_PORT: '5432'
       DB_USER: 'go-auth-db'
       DB_PASSWORD: 'postgres'
       DB_NAME: 'go-auth-db'
       DB_SSLMODE: 'disable'
-      SALT: 'qawsedrftgyhujikolp'
+      PEPPER: 'qawsedrftgyhujikolp' #本設定はローカル用、リリース時は別途設定
+      LOG_LEVEL: 'debug' # ログレベル(リリース時はinfo)
     networks:
       - go-auth-network
 
